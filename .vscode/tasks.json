@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Grace: ejecutar pruebas",
+      "type": "shell",
+      "command": "python -m unittest discover -s tests -v",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Grace: iniciar web",
+      "type": "shell",
+      "command": "python app.py",
+      "isBackground": false,
+      "problemMatcher": []
+    }
+  ]
+}

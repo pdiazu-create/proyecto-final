@@ -1,0 +1,172 @@
+test_api_flujo_de_aprobacion (test_api.PruebaAPI.test_api_flujo_de_aprobacion) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes/estado HTTP/1.1" 400 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes/estado HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes/estado HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes/estado HTTP/1.1" 200 -
+ok
+test_api_salud_y_estado (test_api.PruebaAPI.test_api_salud_y_estado) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /api/salud HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /api/estado HTTP/1.1" 200 -
+ok
+test_archivos_web_y_seguridad_basica (test_api.PruebaAPI.test_archivos_web_y_seguridad_basica) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /favicon.svg HTTP/1.1" 200 -
+ok
+test_host_y_origen_bloqueados (test_api.PruebaAPI.test_host_y_origen_bloqueados) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /api/estado HTTP/1.1" 403 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes HTTP/1.1" 403 -
+ok
+test_payload_grande_rechazado (test_api.PruebaAPI.test_payload_grande_rechazado) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/planes HTTP/1.1" 413 -
+ok
+test_sin_confirmacion_no_reinicia (test_api.PruebaAPI.test_sin_confirmacion_no_reinicia) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "POST /api/reiniciar HTTP/1.1" 400 -
+ok
+test_diagnostico_no_expone_errores_arbitrarios (test_arranque_ia.PruebasArranqueIA.test_diagnostico_no_expone_errores_arbitrarios) ... ok
+test_respaldo_informa_http_sin_exponer_detalles (test_arranque_ia.PruebasArranqueIA.test_respaldo_informa_http_sin_exponer_detalles) ... ok
+test_servidor_no_permite_segunda_instancia (test_arranque_ia.PruebasArranqueIA.test_servidor_no_permite_segunda_instancia) ... ok
+test_accesibilidad_horario_movil (test_boceto_final.TestBocetoEstatico.test_accesibilidad_horario_movil) ... ok
+test_catalogo_separado_de_datos_reales (test_boceto_final.TestBocetoEstatico.test_catalogo_separado_de_datos_reales) ... ok
+test_sin_fecha_utc_en_web (test_boceto_final.TestBocetoEstatico.test_sin_fecha_utc_en_web) ... ok
+test_tabs_semanticos_y_dias_espanol (test_boceto_final.TestBocetoEstatico.test_tabs_semanticos_y_dias_espanol) ... ok
+test_vistas_por_rol_y_fichas_sin_menu_adicional (test_boceto_final.TestBocetoEstatico.test_vistas_por_rol_y_fichas_sin_menu_adicional) ... ok
+test_aula_con_piso_incorrecto (test_boceto_final.TestFechasYHorariosJS.test_aula_con_piso_incorrecto) ... ok
+test_cambio_de_ano_y_mes (test_boceto_final.TestFechasYHorariosJS.test_cambio_de_ano_y_mes) ... ok
+test_catalogo_sin_solapes_y_aulas_validas (test_boceto_final.TestFechasYHorariosJS.test_catalogo_sin_solapes_y_aulas_validas) ... ok
+test_conflicto_entre_curso_base_y_demostracion (test_boceto_final.TestFechasYHorariosJS.test_conflicto_entre_curso_base_y_demostracion) ... ok
+test_semanas_inyectables_en_husos_distintos (test_boceto_final.TestFechasYHorariosJS.test_semanas_inyectables_en_husos_distintos) ... ok
+test_navegacion_y_consultas_no_escriben_estado_json (test_boceto_final.TestLecturaHTTP.test_navegacion_y_consultas_no_escriben_estado_json) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /profesor HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /estudiante HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /horario.js HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /catalogo_demo.js HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /api/estado?estudiante=e1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /api/buscar?id=1 HTTP/1.1" 200 -
+ok
+test_portales_y_archivos_locales (test_boceto_final.TestLecturaHTTP.test_portales_y_archivos_locales) ... 127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /profesor HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /estudiante HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /horario.js HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:25] "GET /catalogo_demo.js HTTP/1.1" 200 -
+ok
+test_diagnostico_con_transporte_falso_no_imprime_clave (test_etapa1.PruebasEtapa1.test_diagnostico_con_transporte_falso_no_imprime_clave) ... ok
+test_error_http_registra_solo_estado_y_codigo (test_etapa1.PruebasEtapa1.test_error_http_registra_solo_estado_y_codigo) ... ok
+test_etiqueta_conserva_cada_origen (test_etapa1.PruebasEtapa1.test_etiqueta_conserva_cada_origen) ... ok
+test_modos_sin_exponer_clave (test_etapa1.PruebasEtapa1.test_modos_sin_exponer_clave) ... ok
+test_curso_detalle_tiene_pestanas_y_datos_reales (test_etapa2.PruebasEtapa2.test_curso_detalle_tiene_pestanas_y_datos_reales) ... ok
+test_intenciones_rapidas_de_reglas_son_utiles (test_etapa2.PruebasEtapa2.test_intenciones_rapidas_de_reglas_son_utiles) ... ok
+test_menu_tiene_paginas_reales_y_un_activo (test_etapa2.PruebasEtapa2.test_menu_tiene_paginas_reales_y_un_activo) ... ok
+test_panel_conecta_botones_campo_origen_carga_y_error (test_etapa2.PruebasEtapa2.test_panel_conecta_botones_campo_origen_carga_y_error) ... ok
+test_panel_es_columna_y_no_fixed (test_etapa2.PruebasEtapa2.test_panel_es_columna_y_no_fixed) ... ok
+test_explicar_tema_concreto_funciona_con_reglas (test_etapa3.PruebasEtapa3.test_explicar_tema_concreto_funciona_con_reglas) ... ok
+test_explicar_tema_usa_selector_en_panel_y_chat (test_etapa3.PruebasEtapa3.test_explicar_tema_usa_selector_en_panel_y_chat) ... ok
+test_tamanos_efectivos_no_bajan_de_12px (test_etapa3.PruebasEtapa3.test_tamanos_efectivos_no_bajan_de_12px) ... ok
+test_endpoint_lote_y_error_400 (test_fase3.AsistenciaHTTP.test_endpoint_lote_y_error_400) ... 127.0.0.1 - - [08/Nov/2026 19:33:26] "POST /api/asistencia/lote HTTP/1.1" 200 -
+127.0.0.1 - - [08/Nov/2026 19:33:26] "POST /api/asistencia/lote HTTP/1.1" 400 -
+ok
+test_estudiante_invalido_y_repetido_se_rechazan (test_fase3.AsistenciaLote.test_estudiante_invalido_y_repetido_se_rechazan) ... ok
+test_falla_guardado_revierte_memoria_y_archivo (test_fase3.AsistenciaLote.test_falla_guardado_revierte_memoria_y_archivo) ... ok
+test_fecha_invalida_y_booleanos_invalidos (test_fase3.AsistenciaLote.test_fecha_invalida_y_booleanos_invalidos) ... ok
+test_lote_incompleto_se_rechaza (test_fase3.AsistenciaLote.test_lote_incompleto_se_rechaza) ... ok
+test_lote_valido_una_escritura_y_formato_v4 (test_fase3.AsistenciaLote.test_lote_valido_una_escritura_y_formato_v4) ... ok
+test_repetir_fecha_actualiza_sin_duplicados (test_fase3.AsistenciaLote.test_repetir_fecha_actualiza_sin_duplicados) ... ok
+test_antes_de_tema_usa_bfs_y_fuente (test_fase4.AsistentePorReglas.test_antes_de_tema_usa_bfs_y_fuente) ... ok
+test_cada_tema_tiene_plantilla_distinta (test_fase4.AsistentePorReglas.test_cada_tema_tiene_plantilla_distinta) ... ok
+test_faltan_datos_saludo_y_desconocida (test_fase4.AsistentePorReglas.test_faltan_datos_saludo_y_desconocida) ... ok
+test_intencion_por_puntuacion_y_acentos (test_fase4.AsistentePorReglas.test_intencion_por_puntuacion_y_acentos) ... ok
+test_no_acepta_tema_desconocido_en_plantilla (test_fase4.AsistentePorReglas.test_no_acepta_tema_desconocido_en_plantilla) ... ok
+test_pendientes_reales_del_estudiante (test_fase4.AsistentePorReglas.test_pendientes_reales_del_estudiante) ... ok
+test_porcentaje_asistencia_toma_registros (test_fase4.AsistentePorReglas.test_porcentaje_asistencia_toma_registros) ... ok
+test_proxima_fecha_diferencia_clase_y_entrega (test_fase4.AsistentePorReglas.test_proxima_fecha_diferencia_clase_y_entrega) ... ok
+test_siguiente_solicitud_y_privacidad_estudiante (test_fase4.AsistentePorReglas.test_siguiente_solicitud_y_privacidad_estudiante) ... ok
+test_falta_estado_despues_de_inicializar_sin_traceback (test_fase5.ArranqueSeguro.test_falta_estado_despues_de_inicializar_sin_traceback) ... ok
+test_chat_usa_rest_cabecera_sistema_fijo_y_400_tokens (test_gemini.PruebasGemini.test_chat_usa_rest_cabecera_sistema_fijo_y_400_tokens) ... ok
+test_diagnostico_gemini_no_contacta_openai_ni_revela_clave (test_gemini.PruebasGemini.test_diagnostico_gemini_no_contacta_openai_ni_revela_clave) ... ok
+test_errores_y_respuesta_truncada_usan_respaldo (test_gemini.PruebasGemini.test_errores_y_respuesta_truncada_usan_respaldo) ... ok
+test_plan_invalido_rechazado_y_clave_no_se_devuelve (test_gemini.PruebasGemini.test_plan_invalido_rechazado_y_clave_no_se_devuelve) ... ok
+test_plan_usa_json_700_tokens_y_solo_datos_del_curso (test_gemini.PruebasGemini.test_plan_usa_json_700_tokens_y_solo_datos_del_curso) ... ok
+test_sin_clave_no_llama_red_y_factory_elige_gemini (test_gemini.PruebasGemini.test_sin_clave_no_llama_red_y_factory_elige_gemini) ... ok
+test_diagnostico_503_informa_sobrecarga_sin_clave (test_gemini_lite.PruebasGeminiLite.test_diagnostico_503_informa_sobrecarga_sin_clave) ... ok
+test_flash_lite_tiene_razonamiento_minimo (test_gemini_lite.PruebasGeminiLite.test_flash_lite_tiene_razonamiento_minimo) ... ok
+test_otro_modelo_no_recibe_parametros_especificos_de_lite (test_gemini_lite.PruebasGeminiLite.test_otro_modelo_no_recibe_parametros_especificos_de_lite) ... ok
+test_detener_no_termina_proceso_ajeno (test_gestor_grace.PruebasGestorGrace.test_detener_no_termina_proceso_ajeno) ... ok
+test_existente_no_inicia_otro_servidor (test_gestor_grace.PruebasGestorGrace.test_existente_no_inicia_otro_servidor) ... ok
+test_inicio_secreto_solo_en_entorno_y_marcador_sin_clave (test_gestor_grace.PruebasGestorGrace.test_inicio_secreto_solo_en_entorno_y_marcador_sin_clave) ... ok
+test_arbol_busqueda_ordenada (test_grace.EstructurasTest.test_arbol_busqueda_ordenada) ... ok
+test_cola_fifo_y_vacia (test_grace.EstructurasTest.test_cola_fifo_y_vacia) ... ok
+test_grafo_ruta_bfs (test_grace.EstructurasTest.test_grafo_ruta_bfs) ... ok
+test_archivos_se_recargan (test_grace.ServicioTest.test_archivos_se_recargan) ... ok
+test_asistencia_actualizar (test_grace.ServicioTest.test_asistencia_actualizar) ... ok
+test_cola_atencion (test_grace.ServicioTest.test_cola_atencion) ... ok
+test_entrega_y_validaciones (test_grace.ServicioTest.test_entrega_y_validaciones) ... ok
+test_estado_inicial_con_datos_ficticios (test_grace.ServicioTest.test_estado_inicial_con_datos_ficticios) ... ok
+test_flujo_aprobacion_obligatorio (test_grace.ServicioTest.test_flujo_aprobacion_obligatorio) ... ok
+test_rechazo_no_publica (test_grace.ServicioTest.test_rechazo_no_publica) ... ok
+test_clave_no_aparece_si_el_proveedor_la_repite (test_ia.PruebasIA.test_clave_no_aparece_si_el_proveedor_la_repite) ... IA no disponible: secreto_en_respuesta
+ok
+test_conversar_con_cola_de_2000_solicitudes_usa_ia_y_reglas (test_ia.PruebasIA.test_conversar_con_cola_de_2000_solicitudes_usa_ia_y_reglas) ... ok
+test_entrada_grande_y_interruptor_desactivado_son_locales (test_ia.PruebasIA.test_entrada_grande_y_interruptor_desactivado_son_locales) ... ok
+test_ia_lenta_no_bloquea_estado_y_dos_peticiones_avanzan (test_ia.PruebasIA.test_ia_lenta_no_bloquea_estado_y_dos_peticiones_avanzan) ... ok
+test_inyeccion_va_como_dato_y_sistema_permanece_fijo (test_ia.PruebasIA.test_inyeccion_va_como_dato_y_sistema_permanece_fijo) ... ok
+test_limite_de_frecuencia_hace_respaldo (test_ia.PruebasIA.test_limite_de_frecuencia_hace_respaldo) ... IA no disponible: frecuencia
+ok
+test_plan_api_recibe_solo_datos_del_curso (test_ia.PruebasIA.test_plan_api_recibe_solo_datos_del_curso) ... ok
+test_plan_con_campos_faltantes_o_texto_largo_hace_respaldo (test_ia.PruebasIA.test_plan_con_campos_faltantes_o_texto_largo_hace_respaldo) ... IA no disponible: campos_faltantes
+IA no disponible: campo_invalido
+ok
+test_respaldo_registra_codigo_sin_clave_ni_datos (test_ia.PruebasIA.test_respaldo_registra_codigo_sin_clave_ni_datos) ... ok
+test_respuesta_ia_valida_se_marca_ia_y_plan_sigue_en_borrador (test_ia.PruebasIA.test_respuesta_ia_valida_se_marca_ia_y_plan_sigue_en_borrador) ... ok
+test_sin_clave_arranca_y_usa_reglas_sin_transporte (test_ia.PruebasIA.test_sin_clave_arranca_y_usa_reglas_sin_transporte) ... IA no disponible: sin_clave
+ok
+test_timeout_error_http_y_json_invalido_hacen_respaldo (test_ia.PruebasIA.test_timeout_error_http_y_json_invalido_hacen_respaldo) ... IA no disponible: error_red
+IA no disponible: HTTP 500
+IA no disponible: error_red
+ok
+test_catalogo_no_se_envia_como_contexto_real_a_ia (test_integracion_boceto.PruebasIntegracionBoceto.test_catalogo_no_se_envia_como_contexto_real_a_ia)
+El asistente solo recibe el contexto real del prototipo del servicio. ... ok
+test_franjas_contiguas_y_cambio_de_horario_de_verano (test_integracion_boceto.PruebasIntegracionBoceto.test_franjas_contiguas_y_cambio_de_horario_de_verano)
+Una clase que termina al iniciar otra no se considera solapada; DST mantiene fecha. ... ok
+test_recursos_nuevos_son_locales_y_sin_scripts_en_linea (test_integracion_boceto.PruebasIntegracionBoceto.test_recursos_nuevos_son_locales_y_sin_scripts_en_linea)
+Los nuevos archivos mantienen la política sin CDN y el catálogo es solo lectura. ... ok
+test_animaciones_y_transiciones_solo_opacidad_y_transformacion (test_interfaz.PruebasInterfaz.test_animaciones_y_transiciones_solo_opacidad_y_transformacion) ... ok
+test_colores_representativos_alcanzan_contraste_aa (test_interfaz.PruebasInterfaz.test_colores_representativos_alcanzan_contraste_aa) ... ok
+test_estilos_de_foco_y_fuentes_locales (test_interfaz.PruebasInterfaz.test_estilos_de_foco_y_fuentes_locales) ... ok
+test_movimiento_reducido_declara_preferencia (test_interfaz.PruebasInterfaz.test_movimiento_reducido_declara_preferencia) ... ok
+test_no_hay_scripts_o_estilos_en_linea (test_interfaz.PruebasInterfaz.test_no_hay_scripts_o_estilos_en_linea) ... ok
+test_tarjetas_son_botones_con_destino_y_foco (test_interfaz.PruebasInterfaz.test_tarjetas_son_botones_con_destino_y_foco) ... ok
+test_causas_distintas_sin_filtrar_mensajes_privados (test_red_gemini.PruebasRedGemini.test_causas_distintas_sin_filtrar_mensajes_privados) ... ok
+test_archivo_corrupto_no_se_oculta (test_regresion.CasosArchivos.test_archivo_corrupto_no_se_oculta) ... ok
+test_bloqueo_rutas_no_validas (test_regresion.CasosArchivos.test_bloqueo_rutas_no_validas) ... ok
+test_escritura_reemplazo_atomico (test_regresion.CasosArchivos.test_escritura_reemplazo_atomico) ... ok
+test_leer_inexistente_devuelve_valor_proporcionado (test_regresion.CasosArchivos.test_leer_inexistente_devuelve_valor_proporcionado) ... ok
+test_reemplazo_fallido_mantiene_original (test_regresion.CasosArchivos.test_reemplazo_fallido_mantiene_original) ... ok
+test_arbol_actualizar_clave_no_duplica (test_regresion.CasosEstructuras.test_arbol_actualizar_clave_no_duplica) ... ok
+test_arbol_profundo_sin_recursion (test_regresion.CasosEstructuras.test_arbol_profundo_sin_recursion) ... ok
+test_cola_reutilizable_despues_de_vaciar (test_regresion.CasosEstructuras.test_cola_reutilizable_despues_de_vaciar) ... ok
+test_grafo_con_ciclo_y_ruta_minima (test_regresion.CasosEstructuras.test_grafo_con_ciclo_y_ruta_minima) ... ok
+test_archivo_parcial_migra_sin_borrar_contenido (test_regresion.CasosServicio.test_archivo_parcial_migra_sin_borrar_contenido) ... ok
+test_bloqueo_ids_invalidos (test_regresion.CasosServicio.test_bloqueo_ids_invalidos) ... ok
+test_cola_reversible_si_falla_guardado (test_regresion.CasosServicio.test_cola_reversible_si_falla_guardado) ... ok
+test_edicion_exige_nueva_revision (test_regresion.CasosServicio.test_edicion_exige_nueva_revision) ... ok
+test_estado_corrupto_no_reinicia_sin_pedir (test_regresion.CasosServicio.test_estado_corrupto_no_reinicia_sin_pedir) ... ok
+test_estado_devuelve_copia_y_no_es_modificable_desde_fuera (test_regresion.CasosServicio.test_estado_devuelve_copia_y_no_es_modificable_desde_fuera) ... ok
+test_institucion_incorrecta_bloqueada (test_regresion.CasosServicio.test_institucion_incorrecta_bloqueada) ... ok
+test_plan_no_publica_sin_aprobacion (test_regresion.CasosServicio.test_plan_no_publica_sin_aprobacion) ... ok
+test_publicacion_reversible_en_memoria_si_falla_archivo (test_regresion.CasosServicio.test_publicacion_reversible_en_memoria_si_falla_archivo) ... ok
+test_reinicio_explicito (test_regresion.CasosServicio.test_reinicio_explicito) ... ok
+test_solicitud_vacia_y_entrega_repetida (test_regresion.CasosServicio.test_solicitud_vacia_y_entrega_repetida) ... ok
+test_validacion_fecha_estricta (test_regresion.CasosServicio.test_validacion_fecha_estricta) ... ok
+test_gemini_envia_timeout_configurado_al_transporte (test_timeout_gemini.PruebasTimeoutGemini.test_gemini_envia_timeout_configurado_al_transporte) ... ok
+test_openai_conserva_timeout_diez (test_timeout_gemini.PruebasTimeoutGemini.test_openai_conserva_timeout_diez) ... ok
+test_timeout_gemini_es_acotado_y_valida_configuracion (test_timeout_gemini.PruebasTimeoutGemini.test_timeout_gemini_es_acotado_y_valida_configuracion) ... ok
+test_arbol_vacio_y_un_elemento (test_v04.BalanceoArbol.test_arbol_vacio_y_un_elemento) ... ok
+test_reconstruir_arbol_degenerado_1800_elementos (test_v04.BalanceoArbol.test_reconstruir_arbol_degenerado_1800_elementos) ... ok
+test_reconstruye_solo_si_necesario (test_v04.BalanceoArbol.test_reconstruye_solo_si_necesario) ... ok
+test_estado_borrado_no_se_regenera_silenciosamente (test_v04.EstadoYServicio.test_estado_borrado_no_se_regenera_silenciosamente) ... ok
+test_estado_corrupto_conserva_bytes (test_v04.EstadoYServicio.test_estado_corrupto_conserva_bytes) ... ok
+test_estado_sin_version_o_version_desconocida_es_rechazado (test_v04.EstadoYServicio.test_estado_sin_version_o_version_desconocida_es_rechazado) ... ok
+test_lee_estado_anterior_version_3_y_guarda_4 (test_v04.EstadoYServicio.test_lee_estado_anterior_version_3_y_guarda_4) ... ok
+test_reinicio_limpio_crea_semilla_y_marcador (test_v04.EstadoYServicio.test_reinicio_limpio_crea_semilla_y_marcador) ... ok
+test_solicitudes_simultaneas_sin_ids_duplicados (test_v04.EstadoYServicio.test_solicitudes_simultaneas_sin_ids_duplicados) ... ok
+test_treinta_publicaciones_secuenciales_y_recarga (test_v04.EstadoYServicio.test_treinta_publicaciones_secuenciales_y_recarga) ... ok
+
+----------------------------------------------------------------------
+Ran 128 tests in 3.699s
+
+OK
