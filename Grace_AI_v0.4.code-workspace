@@ -4,7 +4,9 @@
     "python.analysis.typeCheckingMode": "basic",
     "files.exclude": {
       "**/__pycache__": true,
-      "**/*.pyc": true
+      "**/*.pyc": true,
+      "**/.pytest_cache": true,
+      "**/cache_python": true
     },
     "editor.formatOnSave": false
   }
