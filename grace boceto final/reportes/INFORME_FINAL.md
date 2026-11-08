@@ -8,7 +8,7 @@
 | Fase 2, interfaz | `web/styles.css`, `tests/test_interfaz.py` (dos pruebas nuevas antes de cerrar fase) | 51 → 53 | OK |
 | Fase 3, clase y asistencia | `grace/servicio.py`, `app.py`, `web/index.html`, `web/app.js`, `web/styles.css`, `tests/test_fase3.py` | 53 → 60 | OK |
 | Fase 4, reglas | `grace/asistente.py`, `grace/servicio.py`, `web/index.html`, `tests/test_fase4.py` | 60 → 69 | OK |
-| Fase 5, auditoría | `app.py`, `README.md`, `web/styles.css`, `web/app.js`, `tests/test_fase5.py`, `docs/INFORME_FINAL.md` | 69 → 70 | OK |
+| Fase 5, auditoría | `app.py`, `README.md`, `web/styles.css`, `web/app.js`, `tests/test_fase5.py`, `grace boceto final/reportes/INFORME_FINAL.md` | 69 → 70 | OK |
 
 ## Explicación sencilla
 
@@ -47,4 +47,4 @@ python -m unittest discover -s tests -v
 python app.py
 ```
 
-Abre `http://127.0.0.1:8000` desde el mismo equipo. Consulta también `docs/CHECKLIST_VISUAL.md`.
+Abre `http://127.0.0.1:8000` desde el mismo equipo. Consulta también [`../documentacion/CHECKLIST_VISUAL.md`](../documentacion/CHECKLIST_VISUAL.md).

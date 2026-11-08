@@ -181,16 +181,19 @@ proyecto-final/
 ├── .gitignore
 ├── Grace_AI_v0.4.code-workspace
 └── grace boceto final/
+    ├── bocetos/
     ├── documentacion/
     ├── capturas/
     ├── presentaciones/
     ├── respaldos/
-    └── resultados_pruebas/
+    └── reportes/
 ```
 
 ### Material para exponer
 
 En [`grace boceto final/documentacion/GUIA_EXPOSICION.md`](<grace boceto final/documentacion/GUIA_EXPOSICION.md>) encontrarás el guion de exposición y las presentaciones PDF/PPTX en [`grace boceto final/presentaciones/`](<grace boceto final/presentaciones/>).
+
+Los bocetos de referencia están en [`grace boceto final/bocetos/`](<grace boceto final/bocetos/>), las capturas en [`grace boceto final/capturas/`](<grace boceto final/capturas/>) y los informes/resultados históricos en [`grace boceto final/reportes/`](<grace boceto final/reportes/>).
 
 ## 7. Limitaciones y seguridad
 

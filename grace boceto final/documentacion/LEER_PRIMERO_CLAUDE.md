@@ -39,7 +39,7 @@ No des por implementada una función solo porque aparece en los bocetos o se des
 
 ## Diseño aprobado y funciones futuras
 
-La carpeta `../capturas/bocetos/` contiene la lámina final de 16 vistas y la ampliación de la sesión. Son propuestas, con personas, aulas, horarios, cifras y notas ilustrativas. La aplicación no ha sido transformada aún en esas 16 pantallas funcionales.
+La carpeta `../bocetos/` contiene la lámina final de 16 vistas y la ampliación de la sesión. Son propuestas, con personas, aulas, horarios, cifras y notas ilustrativas. La aplicación no ha sido transformada aún en esas 16 pantallas funcionales.
 
 Dirección visual: celeste protagonista, azul medio para acciones, texto azul oscuro, tarjetas blancas e iconos monocromáticos junto al nombre del tipo de contenido. Turquesa/coral solo como detalles. Chat flotante opcional, sin quitar ancho al contenido.
 
