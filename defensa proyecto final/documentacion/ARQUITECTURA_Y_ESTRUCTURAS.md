@@ -12,7 +12,7 @@
 
 ## B. Invariantes verificables
 
-**Cola enlazada:** si `tamano == 0`, entonces `frente` y `final` deben ser `None`. Si tiene un único nodo, `frente is final`. Las inserciones se hacen por `final` y las extracciones por `frente`. Los tests verifican vaciado y reutilización.
+**Cola enlazada:** si `tamano == 0`, entonces `frente` y `final` deben ser `None`. Si tiene un único nodo, `frente is final`. Las inserciones se hacen por `final` y las extracciones por `frente`. La cola administra solicitudes de ayuda y propuestas de asistencia pendientes; la propuesta solo se retira al confirmarla o descartarla. Los tests verifican vaciado y reutilización.
 
 **Árbol binario de búsqueda:** para cada nodo, las claves menores van a la izquierda y las mayores a la derecha. Una clave repetida reemplaza el valor, no aumenta el tamaño. `en_orden()` devuelve las actividades ordenadas por ID. Los recorridos son iterativos, incluso con 1.800 nodos consecutivos. `reconstruir_balanceado` forma un árbol más bajo utilizando el elemento central de cada intervalo ordenado. `balancear_si_necesario` decide reconstruir cuando la altura supera `tamano.bit_length() + 2`; es una estrategia didáctica, no AVL.
 
@@ -35,11 +35,15 @@ editar (en borrador o revisión) → borrador
 - En el servidor principal, el actor y el rol proceden de una sesión autenticada; los campos que envía el navegador o la IA no conceden permisos.
 - La creación de una actividad publicada y su plan se guardan juntos.
 
-## Acciones autorizadas de bajo riesgo
+## Acciones autorizadas y revisión humana
 
-El catálogo actual permite cambiar tema, abrir pantallas autorizadas, consultar la próxima sesión y resumir el horario semanal. Cada definición incluye roles, parámetros, riesgo y requisito de confirmación. La IA propone JSON, pero el servidor valida la forma, los parámetros, la cuenta y el curso antes de ejecutar. Una acción no incluida en `CATALOGO_ACCIONES` se rechaza.
+`grace/catalogo_acciones.py` es la lista blanca: contiene nombres exactos, roles, parámetros, riesgo y confirmación requerida. La IA devuelve una propuesta JSON; el backend comprueba esquema, identidad, permisos de curso y datos antes de cambiar algo. Una acción que no esté en `CATALOGO_ACCIONES` se rechaza. La identidad y el rol siempre provienen de la sesión autenticada.
 
-Los horarios se calculan desde los cursos visibles para la cuenta autenticada. La interfaz puede mostrar bloques ilustrativos, pero Grace no los usa como datos académicos. El tema se persiste por cuenta en `preferencias.json`; los eventos de propuesta, rechazo y ejecución van a `acciones.jsonl` sin guardar los mensajes. El archivo `config/palabras_bloqueadas.json` controla el filtro de entrada y salida.
+Las acciones de bajo riesgo incluyen tema, navegación, horarios, rutina de estudio y resumen docente. La rutina utiliza fechas de entrega publicadas y disponibilidad explícita, con bloques de 50 minutos y descansos. Las propuestas de asistencia son sensibles: no cambian datos hasta que el profesor responsable ajusta cada fila y confirma. `Seguimiento.marcar_lote` valida toda la lista y la guarda en una única escritura. El estudiante nunca puede confirmar ni modificar la asistencia de otra persona.
+
+Para proponer asistencia, el navegador envía un latido cada 45 segundos mientras una sesión de hoy está visible. `grace/presencia.py` mantiene la última actividad en memoria durante un máximo de 120 segundos. Es un indicador de actividad del navegador, no prueba de presencia física; se pierde al reiniciar el servidor y no sustituye el control del profesor.
+
+Los horarios se calculan desde los cursos visibles para la cuenta autenticada. El tema se persiste por cuenta en `preferencias.json`; propuestas, confirmaciones, rechazos y ejecuciones van a `acciones.jsonl` sin guardar mensajes privados. `config/palabras_bloqueadas.json` controla el filtro de entrada y salida.
 
 ## D. Persistencia: por qué una única unidad atómica
 

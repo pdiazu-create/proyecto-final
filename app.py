@@ -26,6 +26,7 @@ from grace.cuentas import Cuentas, ErrorAcceso, COOKIE
 from grace.perfiles import RecursosPerfiles, catalogo
 from grace.cursos import Cursos
 from grace.acciones import GestorAcciones
+from grace.presencia import RegistroPresencia
 from version_grace import revision_codigo
 
 # Capturada al cargar el proceso, nunca recalculada desde los archivos cambiados.
@@ -246,6 +247,23 @@ class ManejadorGrace(BaseHTTPRequestHandler):
                 return self._json(200, {'ok': True, 'resultado': {'usuario': self.server.recursos.perfil(perfil)}})
             if usuario is None:
                 raise ErrorAcceso(401, 'Inicia sesión.')
+            if ruta == '/api/presencia' and metodo == 'POST' and self.path == ruta:
+                datos = self._leer_cuerpo(2048)
+                return self._json(200, self.server.presencia.registrar(
+                    datos, usuario, self.server.cursos))
+            if ruta == '/api/acciones/pendientes' and metodo == 'GET':
+                return self._json(200, {'pendientes': self.server.acciones.pendientes_usuario(
+                    usuario, self.server.cursos)})
+            if ruta == '/api/acciones/confirmar' and metodo == 'POST' and self.path == ruta:
+                datos = self._leer_cuerpo(16 * 1024)
+                return self._json(200, {'resultado': self.server.acciones.confirmar(
+                    datos, usuario, self.server.cursos, self.server.seguimiento)})
+            if ruta == '/api/acciones/rechazar' and metodo == 'POST' and self.path == ruta:
+                datos = self._leer_cuerpo(2048)
+                if not isinstance(datos, dict) or set(datos) != {'id'}:
+                    raise ErrorValidacion('La propuesta no es válida.')
+                return self._json(200, {'resultado': self.server.acciones.rechazar(
+                    datos['id'], usuario)})
             if ruta == '/api/comunidad' and metodo == 'GET':
                 return self._json(200, self.server.comunidad.listar(usuario))
             if self.path == '/api/comunidad' and metodo == 'POST':
@@ -331,7 +349,8 @@ class ManejadorGrace(BaseHTTPRequestHandler):
                     raise ErrorAcceso(403, 'Esta consulta no está disponible para coordinación.')
                 resultado = self.server.acciones.procesar(
                     datos.get('mensaje'), usuario, token,
-                    self.server.cursos.ia, self.server.cursos)
+                    self.server.cursos.ia, self.server.cursos, self.server.trabajo,
+                    self.server.presencia)
                 if resultado is None and rol == 'coordinador':
                     resultado = {'respuesta': 'Puedo ayudarte a cambiar la apariencia o abrir una pantalla. '
                                                'Tus datos académicos no están disponibles en este espacio.',
@@ -490,6 +509,7 @@ class ServidorGrace(ThreadingHTTPServer):
         self.acciones = GestorAcciones(self.servicio.almacen.carpeta, self.recursos)
         self.trabajo = TrabajoAcademico(self.cursos)
         self.seguimiento = Seguimiento(self.cursos)
+        self.presencia = RegistroPresencia()
         self.comunidad = Comunidad(self.cursos)
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 

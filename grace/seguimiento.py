@@ -100,6 +100,44 @@ class Seguimiento:
                     'solicitudes': [{'estudiante_id': j['estudiante_id'], 'estado': j['estado']}
                                     for j in justificaciones if j['estado'] == 'aprobada']}
 
+    def marcar_lote(self, entrada, usuario):
+        """Guarda de una vez la lista revisada por el profesor."""
+        if usuario['rol'] != 'profesor':
+            raise ErrorAcceso(403, 'Solo el profesor del curso puede confirmar la asistencia.')
+        if not isinstance(entrada, dict) or set(entrada) != {'curso_id', 'sesion_id', 'registros'}:
+            raise ErrorValidacion('La confirmación de asistencia no tiene el formato esperado.')
+        registros = entrada['registros']
+        if not isinstance(registros, list) or not registros:
+            raise ErrorValidacion('Revisa la lista de asistencia antes de confirmar.')
+        with self.cursos.lock:
+            curso, sesion = self._sesion(entrada['curso_id'], entrada['sesion_id'], usuario)
+            if date.fromisoformat(sesion['fecha']) > date.today():
+                raise ErrorAcceso(409, 'La fecha de la sesión aún no ha llegado.')
+            roster = set(self.cursos._roster(curso))
+            filas = {}
+            for registro in registros:
+                if (not isinstance(registro, dict) or set(registro) != {'estudiante_id', 'estado'} or
+                        not isinstance(registro['estudiante_id'], str) or
+                        registro['estudiante_id'] in filas or
+                        registro['estado'] not in ('presente', 'ausente')):
+                    raise ErrorValidacion('La lista contiene un estado o estudiante inválido.')
+                filas[registro['estudiante_id']] = registro['estado']
+            if set(filas) != roster:
+                raise ErrorValidacion('La confirmación debe incluir a toda la matrícula de la sesión.')
+
+            datos = self._leer()
+            existentes = self._filas(datos['asistencias'], curso, sesion)
+            por_estudiante = {r['estudiante_id']: r for r in existentes}
+            for estudiante_id, estado in filas.items():
+                fila = por_estudiante.get(estudiante_id)
+                if fila is None:
+                    fila = {'curso_id': curso['id'], 'sesion_id': sesion['id'],
+                            'estudiante_id': estudiante_id}
+                    datos['asistencias'].append(fila)
+                fila['estado'] = estado
+            self.cursos.almacen.guardar(ARCHIVO, datos)
+            return {'curso_id': curso['id'], 'sesion_id': sesion['id'], 'cantidad': len(filas)}
+
     def descargar(self, solicitud_id, usuario):
         with self.cursos.lock:
             solicitud = self._buscar(self._leer()['solicitudes'], solicitud_id)

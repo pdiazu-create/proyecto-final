@@ -24,6 +24,18 @@ CATALOGO_ACCIONES = {
         'roles': frozenset(('estudiante', 'profesor')),
         'parametros': frozenset(), 'riesgo': 'bajo', 'confirmacion': False,
     },
+    'rutina_estudio': {
+        'roles': frozenset(('estudiante',)),
+        'parametros': frozenset(('disponibilidad',)), 'riesgo': 'bajo', 'confirmacion': False,
+    },
+    'preparar_asistencia': {
+        'roles': frozenset(('profesor',)),
+        'parametros': frozenset(), 'riesgo': 'sensible', 'confirmacion': True,
+    },
+    'resumen_docente': {
+        'roles': frozenset(('profesor',)),
+        'parametros': frozenset(), 'riesgo': 'bajo', 'confirmacion': False,
+    },
 }
 
 

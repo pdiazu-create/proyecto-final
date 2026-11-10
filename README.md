@@ -53,9 +53,13 @@ Los horarios semanales se guardan en el servidor, muestran lunes a viernes con f
 
 ### Acciones autorizadas de Grace
 
-Grace puede cambiar el tema, abrir Mi horario o Mis clases, consultar la próxima sesión y resumir los bloques semanales registrados. La propuesta se obtiene con JSON estructurado cuando la IA está disponible; `grace/acciones.py` valida una lista cerrada y el servidor ejecuta la acción usando la identidad y el rol de la sesión. La alternativa por reglas locales conserva las acciones sencillas sin conexión. Horarios vacíos se informan como tales: Grace no los completa con los bloques ilustrativos del navegador.
+Grace puede cambiar el tema, abrir Mi horario o Mis clases, consultar la próxima sesión, resumir la semana, preparar una rutina de estudio y mostrar un resumen docente al iniciar sesión. La IA propone JSON estructurado; `grace/acciones.py` valida el catálogo cerrado y el servidor ejecuta usando la identidad y el rol de la sesión. Las reglas locales conservan acciones sencillas y las consultas de horario sin conexión. Horarios vacíos se informan como tales: Grace no los completa con bloques ilustrativos.
 
-El tema se guarda por cuenta en `data/preferencias.json`. Los intentos de acción se registran en `data/acciones.jsonl` sin copiar el mensaje privado. Las expresiones bloqueadas se pueden ajustar en `config/palabras_bloqueadas.json`. El límite actual del chat es de 500 caracteres, 10 mensajes por minuto por cuenta y 8 acciones por sesión autenticada. Estas medidas son para la demostración local, no sustituyen controles de producción.
+La rutina usa entregas publicadas con fecha real y bloques libres que proporciona el estudiante; no resuelve actividades. La asistencia es sensible: el profesor recibe una propuesta presente/sin registrar y debe revisar cada estudiante y confirmar. La cola enlazada de `grace/estructuras.py` mantiene estas propuestas pendientes. El registro de asistencia solo se escribe al confirmar.
+
+La presencia es una señal temporal: el navegador de un estudiante envía un latido cada 45 segundos mientras la sesión de hoy está visible. El servidor conserva los latidos solo en memoria y considera reciente una señal de hasta 120 segundos. No prueba que la persona esté físicamente en el aula, no sustituye la verificación docente y se pierde al reiniciar Grace.
+
+El tema se guarda por cuenta en `data/preferencias.json`. Las propuestas, confirmaciones, rechazos y ejecuciones se registran en `data/acciones.jsonl` sin copiar el mensaje privado. Las expresiones bloqueadas se pueden ajustar en `config/palabras_bloqueadas.json`. El límite actual del chat es de 500 caracteres, 10 mensajes por minuto por cuenta y 8 acciones por sesión autenticada. Estas medidas son para la demostración local, no sustituyen controles de producción.
 
 La configuración de cursos se guarda en `data/cursos.json`. El curso principal conserva el estado académico histórico en `data/estado.json`; la primera inicialización guarda una copia verificable en `data/cursos/migraciones/estado-anterior.json`. Los cursos nuevos guardan su estado en `data/cursos/<id>/estado.json`. No borres ni reemplaces estos archivos al actualizar.
 
@@ -183,7 +187,7 @@ También puedes ejecutar `python demo_consola.py`: aparece un menú interactivo 
 | Contenido | Implementación propia | Uso real en Grace |
 |---|---|---|
 | Listas | `self.actividades`, `self.planes`, `self.entregas`, recorridos con `for`, búsquedas y filtrado | Información académica |
-| Cola enlazada | `NodoCola`, `ColaEnlazada`, `frente`, `final`, `encolar`, `desencolar` | Solicitudes de ayuda por orden de llegada |
+| Cola enlazada | `NodoCola`, `ColaEnlazada`, `frente`, `final`, `encolar`, `desencolar` | Solicitudes de ayuda y borradores de asistencia que esperan confirmación docente |
 | Archivos | `AlmacenJSON`, `with open`, UTF-8, JSON y reemplazo atómico | Persistencia en `data/estado.json` |
 | Árboles | `NodoArbol`, `ArbolBinarioBusqueda`, inserción, búsqueda, recorrido iterativo | Índice por número de actividad |
 | Grafos | `GrafoAprendizaje`, lista de adyacencia, BFS propio | Prerrequisitos y rutas de aprendizaje |

@@ -108,6 +108,14 @@ def proponer_accion(mensaje):
                                  'cuando tengo clase', 'cuando es mi clase',
                                  'proxima sesion', 'siguiente sesion')):
         return {'accion': 'proxima_sesion', 'parametros': {}, 'respuesta': ''}
+    if any(p in texto for p in ('revisa la asistencia', 'revisar la asistencia',
+                                'asistencia de hoy', 'revisa asistencia')):
+        return {'accion': 'preparar_asistencia', 'parametros': {}, 'respuesta': ''}
+    if any(p in texto for p in ('resumen de inicio', 'resumen docente', 'resumen para hoy')):
+        return {'accion': 'resumen_docente', 'parametros': {}, 'respuesta': ''}
+    if any(p in texto for p in ('rutina de estudio', 'organiza mi estudio', 'organizar mi estudio',
+                                'ayudame a organizarme', 'ayúdame a organizarme')):
+        return {'accion': 'rutina_estudio', 'parametros': {'disponibilidad': []}, 'respuesta': ''}
     if 'horario' in texto:
         return {'accion': 'abrir_pantalla', 'parametros': {'pantalla': 'calendario'}, 'respuesta': ''}
     if 'mis clases' in texto or 'mis cursos' in texto:

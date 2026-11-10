@@ -4,6 +4,29 @@ const RUTA_TRABAJO = '/api/cursos/trabajo';
 const FORMATOS_TRABAJO = '.pdf,.docx,.pptx,.txt,.png,.jpg,.jpeg';
 const CATEGORIAS_MATERIAL = {presentacion:'Presentación', lectura:'Lectura', video:'Video', apoyo:'Archivos de apoyo'};
 const MOMENTOS_MATERIAL = {antes:'Antes de clase', durante:'Durante la clase', despues:'Después de clase'};
+let temporizadorPresencia = null;
+
+function iniciarLatidoPresencia(aula, cursoId, sesionId) {
+  clearInterval(temporizadorPresencia);
+  if (rolActual !== 'estudiante' || aula.dataset.sesionPublicada !== 'true') return;
+  const enviarLatido = async () => {
+    if (!aula.isConnected || !aula.classList.contains('active')) {
+      clearInterval(temporizadorPresencia);
+      temporizadorPresencia = null;
+      return;
+    }
+    if (document.visibilityState === 'hidden') return;
+    try {
+      await api('/api/presencia', {curso_id: cursoId, sesion_id: sesionId});
+    } catch (error) {
+      clearInterval(temporizadorPresencia);
+      temporizadorPresencia = null;
+      mostrarToast('No se pudo actualizar la presencia: ' + error.message);
+    }
+  };
+  enviarLatido();
+  temporizadorPresencia = setInterval(enviarLatido, 45000);
+}
 
 function prepararTrabajo(host, curso) {
   if (!host || !['profesor', 'estudiante'].includes(rolActual)) return;
@@ -125,6 +148,9 @@ function abrirAulaGrace(curso, sesion, herramienta = '', actividadId = '') {
     prepararAsistenciaSesiones(aula.querySelector('[data-aula-asistencia]'), {...curso, sesiones:[sesion]});
   }
   const entrada = new Promise(resolver => navegar('aula-grace', 'aula-titulo', resolver));
+  if (sesion.fecha === fechaLocal(new Date())) {
+    entrada.then(() => iniciarLatidoPresencia(aula, curso.id, sesion.id));
+  }
   Promise.all([entrada, cargarTrabajo(aula, curso.id, sesion.id)]).then(([, ok]) => {
     if (!ok || !aula.isConnected) return;
     if (publicar) publicar.disabled = false;

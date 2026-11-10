@@ -1,9 +1,11 @@
 """Acciones de Grace: lista blanca, sesión autenticada y datos de horario reales."""
 import json
 import unittest
+from datetime import date, datetime, timedelta
 
 from grace.acciones import CATALOGO_ACCIONES, validar_propuesta
 from grace.ia import ErrorIA, ProveedorAPI, ProveedorConRespaldo, ProveedorReglas
+from grace.presencia import RegistroPresencia
 import test_cursos_fase2 as fase2
 
 
@@ -33,6 +35,9 @@ class AccionesAutorizadas(unittest.TestCase):
             'abrir_pantalla': {'pantalla': 'calendario'},
             'proxima_sesion': {},
             'resumen_semanal': {},
+            'rutina_estudio': {'disponibilidad': []},
+            'preparar_asistencia': {},
+            'resumen_docente': {},
         }
         for accion, parametros in propuestas.items():
             roles = CATALOGO_ACCIONES[accion]['roles']
@@ -131,7 +136,7 @@ class AccionesAutorizadas(unittest.TestCase):
             cuerpo_api.update(json.loads(solicitud.data.decode('utf-8')))
             return RespuestaFalsa({'output_text': json.dumps({
                 'accion': 'cambiar_tema', 'tema': 'oscuro',
-                'pantalla': 'ninguna', 'respuesta': '',
+                'pantalla': 'ninguna', 'disponibilidad': [], 'respuesta': '',
             })})
 
         self.server.cursos.ia = ProveedorAPI('clave-falsa', transporte=transporte)
@@ -144,6 +149,148 @@ class AccionesAutorizadas(unittest.TestCase):
         entrada_ia = cuerpo_api['input'][1]['content']
         self.assertNotIn(cuenta_ana['id'], entrada_ia)
         self.assertNotIn('estudiante_id', entrada_ia)
+
+    def test_rutina_usa_entregas_y_fechas_publicadas_del_estudiante(self):
+        profesor, _ = self.login('martin')
+        estudiante, _ = self.login('ana')
+        curso_id = 'principal'
+        sesion = self.request('/api/cursos/sesiones', {
+            'curso_id': curso_id, 'titulo': 'Sesión de rutina', 'tema': '',
+            'fecha': date.today().isoformat(), 'descripcion': 'Repaso.',
+            'actividades': '', 'inicio': '09:00', 'fin': '10:00',
+            'edificio': 'B', 'piso': 2, 'aula': 'B-205',
+        }, profesor)[2]['resultado']
+        self.assertEqual(self.request('/api/cursos/sesiones/publicar', {
+            'curso_id': curso_id, 'id': sesion['id'],
+        }, profesor)[0], 200)
+        vence = (datetime.now() + timedelta(days=2)).replace(hour=23, minute=30, second=0, microsecond=0)
+        actividad = self.request('/api/cursos/trabajo', {
+            'curso_id': curso_id, 'sesion_id': sesion['id'], 'tipo': 'actividad',
+            'titulo': 'Ensayo de prueba rutina', 'instrucciones': 'Explica tu método.',
+            'criterios': 'Claridad', 'vence': vence.strftime('%Y-%m-%dT%H:%M'),
+        }, profesor)[2]['resultado']
+        bloque_fecha = (datetime.now() + timedelta(days=1)).date().isoformat()
+
+        class PropuestaRutina:
+            def proponer_accion(self, _mensaje):
+                return {'accion': 'rutina_estudio',
+                        'parametros': {'disponibilidad': [f'{bloque_fecha} 16:00-18:00']},
+                        'respuesta': '', 'origen': 'reglas'}
+
+        self.server.cursos.ia = PropuestaRutina()
+        sin_horario = self.request('/api/conversar', {
+            'mensaje': 'Ayúdame a organizar mi estudio',
+        }, estudiante)[2]['resultado']
+        self.assertIn('Dime tus horas libres', sin_horario['respuesta'])
+        self.assertNotIn(actividad['titulo'], sin_horario['respuesta'])
+        resultado = self.request('/api/conversar', {
+            'mensaje': 'Ayúdame a organizar mi estudio mañana de 16:00 a 18:00',
+        }, estudiante)[2]['resultado']
+        self.assertEqual(resultado['accion'], 'rutina_estudio')
+        self.assertIn(actividad['titulo'], resultado['respuesta'])
+        self.assertIn(vence.strftime('%d/%m %H:%M'), resultado['respuesta'])
+        self.assertIn('descanso', resultado['respuesta'])
+        self.assertEqual(resultado['origen'], 'reglas')
+
+    def test_asistencia_requiere_revision_docente_y_guarda_en_un_lote(self):
+        profesor, _ = self.login('martin')
+        estudiante, cuenta = self.login('ana')
+        curso_id = 'principal'
+        sesion = self.request('/api/cursos/sesiones', {
+            'curso_id': curso_id, 'titulo': 'Asistencia de hoy', 'tema': '',
+            'fecha': date.today().isoformat(), 'descripcion': 'Sesión abierta.',
+            'actividades': '', 'inicio': '09:00', 'fin': '10:00',
+            'edificio': 'A', 'piso': 1, 'aula': 'A-101',
+        }, profesor)[2]['resultado']
+        self.assertEqual(self.request('/api/cursos/sesiones/publicar', {
+            'curso_id': curso_id, 'id': sesion['id'],
+        }, profesor)[0], 200)
+        self.assertEqual(self.request('/api/presencia', {
+            'curso_id': curso_id, 'sesion_id': sesion['id'],
+        }, profesor)[0], 403)
+        self.assertEqual(self.request('/api/presencia', {
+            'curso_id': curso_id, 'sesion_id': sesion['id'],
+        }, estudiante)[0], 200)
+        self.assertEqual(self.request('/api/presencia', {
+            'curso_id': curso_id, 'sesion_id': sesion['id'],
+            'estudiante_id': 'e2',
+        }, estudiante)[0], 400)
+        propuesta = self.request('/api/conversar', {
+            'mensaje': 'Revisa la asistencia de hoy',
+        }, profesor)[2]['resultado']
+        self.assertEqual(propuesta['accion'], 'preparar_asistencia')
+        filas = propuesta['confirmacion']['registros']
+        fila_ana = next(f for f in filas if f['estudiante_id'] == cuenta['estudiante_id'])
+        self.assertEqual(fila_ana['estado'], 'presente')
+        self.assertEqual(self.request(
+            f'/api/seguimiento/sesion?curso_id={curso_id}&sesion_id={sesion["id"]}',
+            cookie=profesor)[2]['asistencias'], [])
+        self.assertEqual(self.request('/api/acciones/pendientes', cookie=estudiante)[0], 403)
+        pendientes = self.request('/api/acciones/pendientes', cookie=profesor)[2]['pendientes']
+        self.assertEqual(len(pendientes), 1)
+        codigo, _, _ = self.request('/api/acciones/confirmar', {
+            'id': propuesta['confirmacion']['id'], 'registros': [],
+        }, estudiante)
+        self.assertEqual(codigo, 403)
+
+        sin_revisar = [{'estudiante_id': f['estudiante_id'],
+                        'estado': 'presente' if f['estado'] == 'presente' else 'sin_registrar'}
+                       for f in filas]
+        codigo, _, _ = self.request('/api/acciones/confirmar', {
+            'id': propuesta['confirmacion']['id'], 'registros': sin_revisar,
+        }, profesor)
+        self.assertEqual(codigo, 400)
+        self.assertEqual(self.request(
+            f'/api/seguimiento/sesion?curso_id={curso_id}&sesion_id={sesion["id"]}',
+            cookie=profesor)[2]['asistencias'], [])
+
+        revisados = [{'estudiante_id': f['estudiante_id'],
+                      'estado': 'presente' if f['estudiante_id'] == cuenta['estudiante_id'] else 'ausente'}
+                     for f in filas]
+        codigo, _, cuerpo = self.request('/api/acciones/confirmar', {
+            'id': propuesta['confirmacion']['id'], 'registros': revisados,
+        }, profesor)
+        self.assertEqual(codigo, 200, cuerpo)
+        asistencias = self.request(
+            f'/api/seguimiento/sesion?curso_id={curso_id}&sesion_id={sesion["id"]}',
+            cookie=profesor)[2]['asistencias']
+        self.assertEqual(len(asistencias), len(filas))
+        self.assertEqual(next(a for a in asistencias if a['estudiante_id'] == cuenta['estudiante_id'])['estado'],
+                         'presente')
+        codigo, _, _ = self.request('/api/acciones/confirmar', {
+            'id': propuesta['confirmacion']['id'], 'registros': revisados,
+        }, profesor)
+        self.assertEqual(codigo, 404)
+
+        denegada = self.request('/api/conversar', {
+            'mensaje': 'Revisa la asistencia de hoy',
+        }, estudiante)[2]['resultado']
+        self.assertNotIn('confirmacion', denegada)
+        self.assertIn('asistencia', denegada['respuesta'])
+
+    def test_resumen_docente_se_limita_a_sus_cursos_y_a_datos_registrados(self):
+        profesor, _ = self.login('martin')
+        resultado = self.request('/api/conversar', {
+            'mensaje': 'Dame mi resumen de inicio',
+        }, profesor)[2]['resultado']
+        self.assertEqual(resultado['accion'], 'resumen_docente')
+        self.assertIn('entregas por revisar', resultado['respuesta'])
+        self.assertIn('solicitudes de ayuda pendientes', resultado['respuesta'])
+        self.assertEqual(resultado['origen'], 'reglas')
+        estudiante, _ = self.login('ana')
+        denegado = self.request('/api/conversar', {
+            'mensaje': 'Dame mi resumen de inicio',
+        }, estudiante)[2]['resultado']
+        self.assertNotIn('datos', denegado)
+        self.assertIn('no está disponible', denegado['respuesta'])
+
+    def test_presencia_expira_despues_del_limite(self):
+        ahora = [100.0]
+        presencia = RegistroPresencia(reloj=lambda: ahora[0])
+        presencia._latidos[('curso', 1, 'e1')] = (100.0, 'marca')
+        self.assertEqual(presencia.activos('curso', 1, ['e1']), {'e1': 'marca'})
+        ahora[0] += 121
+        self.assertEqual(presencia.activos('curso', 1, ['e1']), {})
 
     def test_falla_ia_usa_reglas_para_las_acciones_sencillas(self):
         ana, _ = self.login('ana')

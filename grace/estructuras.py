@@ -1,7 +1,8 @@
 """Estructuras hechas a mano para Programación Estructurada.
 
 Listas: se usan para almacenar alumnos, entregas y actividades.
-Cola enlazada: atención FIFO de solicitudes de ayuda.
+Cola enlazada: atención FIFO de solicitudes de ayuda y acciones pendientes
+de confirmación docente.
 Árbol binario: índice de actividades por identificador.
 Grafo dirigido: prerrequisitos académicos y búsqueda BFS.
 

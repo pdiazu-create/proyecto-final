@@ -390,6 +390,7 @@ async function enviarChat(mensaje, destino='chat', contexto={}) {
     document.querySelectorAll?.('[data-ia-mode]')?.forEach(e => { e.textContent = estadoReal; });
     const respuesta = escapar(r.respuesta).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
     agregarMensajeChat(`<div class="bubble ai">${respuesta}<small class="response-source">Fuente: ${fuente}</small></div>`);
+    if (r.confirmacion) agregarMensajeChat(tarjetaConfirmacionAsistencia(r.confirmacion));
     const accesos = (r.accesos || []).filter(a =>
       a && ['calendario','mis-clases','inicio'].includes(a.pantalla) &&
       typeof a.etiqueta === 'string');
@@ -407,6 +408,31 @@ async function enviarChat(mensaje, destino='chat', contexto={}) {
     document.querySelectorAll?.(`[data-consulta-pendiente="${consulta}"]`)?.forEach(e => e.remove());
   }
   chat.scrollTop=chat.scrollHeight;
+}
+
+function tarjetaConfirmacionAsistencia(confirmacion) {
+  const filas = confirmacion.registros.map(fila => `<label>${escapar(fila.nombre)}
+    <select data-asistencia-estado="${escapar(fila.estudiante_id)}">
+      <option value="sin_registrar" ${fila.estado === 'sin_registrar' ? 'selected' : ''}>Sin registrar · revisar</option>
+      <option value="presente" ${fila.estado === 'presente' ? 'selected' : ''}>Presente</option>
+      <option value="ausente">Ausente</option>
+    </select></label>`).join('');
+  return `<article class="panel attendance-review" data-confirmacion="${escapar(confirmacion.id)}">
+    <h3>Revisión de asistencia · ${escapar(confirmacion.curso)} · ${escapar(confirmacion.sesion)}</h3>
+    <p>La presencia es una señal reciente, no una prueba. Revisa cada fila; nada se guarda hasta confirmar.</p>
+    <div class="form">${filas}</div>
+    <p data-confirmacion-estado role="status"></p>
+    <button type="button" class="primary-btn" data-asistencia-confirmar>Confirmar lista</button>
+    <button type="button" class="outline-btn" data-asistencia-rechazar>Descartar propuesta</button>
+  </article>`;
+}
+
+async function cargarPropuestasAsistencia() {
+  if (rolActual !== 'profesor') return;
+  const {pendientes} = await api('/api/acciones/pendientes');
+  if (!pendientes.length) return;
+  agregarMensajeChat('<div class="bubble ai">Tienes propuestas de asistencia pendientes de revisar.</div>');
+  pendientes.forEach(pendiente => agregarMensajeChat(tarjetaConfirmacionAsistencia(pendiente)));
 }
 
 function agregarMensajeChat(html) {
@@ -684,6 +710,33 @@ function prepararInterfaz() {
   });
   $('explicar-sesion').addEventListener('click',()=>{mostrarChatFlotante(true);enviarChat(`Explícame ${temaContexto || 'Listas'}`,'assistant-messages');});
   document.addEventListener('click',e=>{
+    const confirmar=e.target.closest('[data-asistencia-confirmar]');
+    if(confirmar){
+      const tarjeta=confirmar.closest('[data-confirmacion]');
+      const estado=tarjeta.querySelector('[data-confirmacion-estado]');
+      const registros=[...tarjeta.querySelectorAll('[data-asistencia-estado]')].map(select=>({
+        estudiante_id:select.dataset.asistenciaEstado, estado:select.value,
+      }));
+      if(registros.some(fila=>fila.estado==='sin_registrar')){
+        estado.textContent='Revisa todas las filas y elige presente o ausente.';
+        return;
+      }
+      confirmar.disabled=true;
+      api('/api/acciones/confirmar',{id:tarjeta.dataset.confirmacion,registros})
+        .then(()=>{estado.textContent='Asistencia confirmada y guardada.';tarjeta.querySelectorAll('select,button').forEach(c=>c.disabled=true);})
+        .catch(error=>{estado.textContent='No se guardó la asistencia. '+error.message;confirmar.disabled=false;});
+      return;
+    }
+    const rechazar=e.target.closest('[data-asistencia-rechazar]');
+    if(rechazar){
+      const tarjeta=rechazar.closest('[data-confirmacion]');
+      const estado=tarjeta.querySelector('[data-confirmacion-estado]');
+      rechazar.disabled=true;
+      api('/api/acciones/rechazar',{id:tarjeta.dataset.confirmacion})
+        .then(()=>{estado.textContent='Propuesta descartada; no se guardó asistencia.';tarjeta.querySelectorAll('select,button').forEach(c=>c.disabled=true);})
+        .catch(error=>{estado.textContent='No se pudo descartar. '+error.message;rechazar.disabled=false;});
+      return;
+    }
     const accesoGrace=e.target.closest('[data-grace-pantalla]');
     if(accesoGrace){
       const pantalla=accesoGrace.dataset.gracePantalla;

@@ -69,6 +69,13 @@ async function entrarCuenta(cuenta) {
     seleccionarPestanaCurso('sesiones');
   }
   if (typeof prepararSeguimiento === 'function') prepararSeguimiento();
+  if (cuenta.rol === 'profesor') {
+    try { await cargarPropuestasAsistencia(); }
+    catch (error) { agregarMensajeChat(`<div class="bubble ai">${escapar(error.message)}</div>`); }
+  }
+  if (cuenta.rol === 'profesor' && asistenteActivado) {
+    setTimeout(() => enviarChat('Dame mi resumen de inicio', 'assistant-messages'), 0);
+  }
 }
 
 function aplicarCuenta() {
