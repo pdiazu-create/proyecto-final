@@ -7,6 +7,30 @@ Grace es la visión de una plataforma educativa institucional privada. Este repo
 
 **La plataforma no reemplaza ningún sistema universitario ni está lista para usarse con cuentas reales.** Su objetivo es demostrar y explicar los conceptos de Programación Estructurada con datos ficticios.
 
+## Versión de trabajo y demostración limpia
+
+El punto de continuidad y las comprobaciones pendientes están en
+[ESTADO_ACTUAL.md](defensa%20proyecto%20final/ESTADO_ACTUAL.md).
+Los bocetos y documentos históricos no certifican funciones de la versión actual.
+
+Para probar sin alterar los cursos guardados, ejecuta **`python demo_grace.py`** y abre
+**http://127.0.0.1:8001**. Crea datos temporales de demostración y usa reglas locales.
+Los cambios de esa demostración se descartan al detenerla con Ctrl+C. No necesita clave,
+conexión a un proveedor ni paquetes adicionales. `python app.py` conserva el arranque
+habitual con los datos de trabajo en `data/`.
+
+«Abrir Grace» compara la huella del código instalado con la del proceso abierto.
+Si hay archivos nuevos o modificados, avisa que debes detener y volver a abrir Grace.
+La comparación incluye Python, HTML, JavaScript, CSS y el logo; excluye datos y documentos.
+El iniciador ofrece también **Abrir con reglas locales (sin clave)**. En ese modo no
+transmite consultas a proveedores. La clave de Gemini sigue introduciéndose únicamente
+en la ventana privada cuando se elige IA.
+
+Para las pruebas Python usa `python -m unittest discover -s tests`.
+Para las cuatro verificaciones JavaScript usa
+`node --test tests/chat_flotante.test.cjs tests/ajuste_integral.test.cjs tests/cuentas_cliente.test.cjs tests/perfil_visual.test.cjs`.
+Node se usa para comprobar el cliente, no es necesario para ejecutar Grace.
+
 ## Cuentas de demostración — parte 1
 
 Al ejecutar `python app.py`, Grace requiere iniciar sesión. Las cuentas iniciales son `ana`, `diego` y `sofia` (estudiantes), `martin` (profesor) y `coordinacion` (coordinación). Todas usan la contraseña de prueba **12345**. La contraseña común es una decisión para esta demostración local; no se debe usar con datos reales.

@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import gestor_grace as gestor
+from version_grace import revision_codigo
 
 
 class PruebasGestorGrace(unittest.TestCase):
@@ -24,7 +25,8 @@ class PruebasGestorGrace(unittest.TestCase):
                             self.assertNotIn('CLAVE-FALSA', marcador.read_text())
 
     def test_existente_no_inicia_otro_servidor(self):
-        with patch.object(gestor, 'salud', return_value={'estado':'ok'}):
+        with patch.object(gestor, 'salud', return_value={
+                'estado':'ok', 'revision':revision_codigo()}):
             with patch.object(gestor.subprocess, 'Popen') as crear:
                 self.assertEqual(gestor.iniciar(''), 'existente')
                 crear.assert_not_called()

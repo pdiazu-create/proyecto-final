@@ -419,8 +419,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   --ink: #0B2545;
   --primary: #0B5FD3;
   --primary-dark: #0B2545;
-  --teal: #0B7A7C;
-  --sidebar: #FFFFFF;
+  --teal: #08676A;
+  --welcome: #DCEEFA;
+  --sidebar: #DEEDF8;
   --muted: #455D73;
   --line: #CBDDEA;
   --teal-pale: #E3F4F3;
@@ -887,7 +888,7 @@ body:not(.role-estudiante) .widgets-complementarios {display:none}
 #dialogo-widgets {max-height:calc(100dvh - 32px);overflow-y:auto}
 #restablecer-tarjetas-rol {margin-block:8px 14px}
 
-.inicio-bienvenida {padding:16px 20px;background:#dceefa;border-radius:16px;margin-bottom:16px}
+.inicio-bienvenida {padding:16px 20px;background:var(--welcome);border-radius:16px;margin-bottom:16px}
 .inicio-bienvenida h1 {margin:4px 0}
 .inicio-tarjeta {background:var(--inicio-fondo,#e9f4fd);color:#12304d}
 .inicio-tarjeta.inicio-ambar {--inicio-fondo:#fff3d8}
@@ -927,43 +928,6 @@ body.grace-letra-grande {font-size:17px}
 .grace-letra-grande .page-heading h1 {font-size:clamp(27px,4vw,44px)}
 .grace-letra-grande :is(.content,.sidebar,.assistant-dock) {overflow-wrap:anywhere}
 
-body.grace-oscura {
-  color-scheme:dark;
-  --bg:#0e1e30;--surface:#182e43;--ink:#edf5fc;--muted:#bdd1e1;--line:#536d83;
-  --primary:#245da0;--primary-dark:#e0efff;--teal:#8adbd3;--sidebar:#14293e;
-  --teal-pale:#204644;--purple:#c6dfff;--purple-dark:#e0efff;--purple-pale:#233b51;
-  --green:#a5e2bb;--mint:#234a39;--focus:#a8d6ff;--shadow:none;
-}
-.grace-oscura :is(.sidebar,.topbar,.mobile-nav,.sidebar .workspace,.sidebar #menu-toggle,.sidebar .nav-btn,
-  .panel,.course-detail,.curso-tarjeta,.widget-dialog,.chat-panel,.chat-top,.chat-compose,
-  .assistant-dock,.assistant-dock-head,.assistant-dock-body,.assistant-compose,.assistant-switch-row) {
-  background:var(--surface);color:var(--ink);border-color:var(--line)
-}
-.grace-oscura :is(.sidebar .nav-btn.active,.sidebar .nav-btn:hover,.mobile-nav-btn.active,
-  .inicio-bienvenida,.aula-diapo,.syllabus-editor,.syllabus-bloque,.content .activity-row,.content .request-row,
-  .content .helper-note,.aula-pregunta,.aula-lectura,.chat-messages,.bubble.ai,.assistant-messages,
-  .sesion-siguiente-paso,.docencia-secundaria,.tag,.course-badge) {background:#223e56;color:var(--ink);border-color:var(--line)}
-.grace-oscura .sidebar .nav-btn.active {box-shadow:inset 4px 0 0 #93c8f1}
-.grace-oscura :is(.inicio-tarjeta.inicio-ambar,.tag.amber,.tag.estado-pendiente) {background:#4a391e;color:#ffe3a1}
-.grace-oscura :is(.inicio-tarjeta.inicio-violeta,.comunidad-publicacion) {background:#332d4d;color:#eee3ff}
-.grace-oscura :is(.inicio-tarjeta.inicio-verde,.tag.green,.tag.estado-confirmado) {background:#234737;color:#c3f1cf}
-.grace-oscura :is(.inicio-tarjeta.inicio-coral,.tag.red,.tag.estado-alerta,.content .aviso-error,.content #notice.error) {background:#502f39;color:#ffd5cb}
-.grace-oscura .inicio-tarjeta.inicio-turquesa {background:#204644;color:#c8f6ec}
-.grace-oscura .inicio-icono {background:#0e1e30;color:var(--ink)}
-.grace-oscura :is(.page-heading p,.panel-heading p,.activity-row p,.request-row p,.form label,
-  .nav-grupo,.micro,.helper-note,.horario-hora,.aula-material-marca,.aula-material-folio,
-  .syllabus-editor summary,.aula-lectura h4,.paso-docente,.aviso-docente,#comunidad summary) {color:var(--muted)}
-.grace-oscura :is(.form input,.form select,.form textarea,.chat-compose input,.assistant-dock input) {
-  background:#102438;color:var(--ink);border-color:#789bb7
-}
-.grace-oscura :is(input,textarea)::placeholder {color:var(--muted)}
-.grace-oscura :is(a,.text-btn) {color:#a8d6ff}
-.grace-oscura :is(.outline-btn,.small-btn,.mini-btn,.mobile-nav-btn):not(.primary-btn) {
-  background:#243d55;color:#edf5fc;border-color:#789bb7
-}
-.grace-oscura :is(.content,.sidebar) :is(summary,button,a,input,textarea,select):focus-visible {outline-color:var(--focus)}
-.grace-oscura :is(.aula-diapo li,.aula-diagrama li,[data-aula-agenda] h3) {background:#192f46;color:var(--ink)}
-.grace-oscura [data-aula-agenda] .aula-paso[aria-current="step"] {background:#204644;color:#c8f6ec}
 
 .grupo-mensajes {margin-block:12px;max-height:360px;overflow:auto}
 .grupo-mensajes p {overflow-wrap:anywhere}
@@ -991,7 +955,7 @@ body.grace-oscura {
 
 
 /* Jerarquía y contraste para lectura y navegación académica. */
-.sidebar {background:#deedf8;padding-block:18px;scrollbar-color:#537a99 #deedf8}
+.sidebar {background:var(--sidebar);padding-block:18px;scrollbar-color:#537a99 #deedf8}
 .sidebar .brand {padding-bottom:14px}
 .sidebar .workspace {background:#edf6fd;border-color:#91adc3}
 .sidebar .nav-heading {display:none}
@@ -1038,3 +1002,44 @@ body.menu-colapsado .sidebar .nav-btn {gap:0}
 .aula-lectura section + section {border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
 .aula-lectura h4 {color:#08676a;font-size:16px;margin:0 0 6px}
 .aula-lectura section p {margin:6px 0;overflow-wrap:anywhere}
+
+/* Tema oscuro: última capa, después de las superficies claras. */
+body.grace-oscura {
+  color-scheme:dark;
+  --welcome:#223e56;
+  --bg:#0e1e30;--surface:#182e43;--ink:#edf5fc;--muted:#bdd1e1;--line:#536d83;
+  --primary:#245da0;--primary-dark:#e0efff;--teal:#8adbd3;--sidebar:#14293e;
+  --teal-pale:#204644;--purple:#c6dfff;--purple-dark:#e0efff;--purple-pale:#233b51;
+  --green:#a5e2bb;--mint:#234a39;--focus:#a8d6ff;--shadow:none;
+}
+.grace-oscura :is(.sidebar,.topbar,.mobile-nav,.sidebar .workspace,.sidebar #menu-toggle,.sidebar .nav-btn,
+  .panel,.course-detail,.curso-tarjeta,.widget-dialog,.chat-panel,.chat-top,.chat-compose,
+  .assistant-dock,.assistant-dock-head,.assistant-dock-body,.assistant-compose,.assistant-switch-row) {
+  background:var(--surface);color:var(--ink);border-color:var(--line)
+}
+.grace-oscura :is(.sidebar .nav-btn.active,.sidebar .nav-btn:hover,.mobile-nav-btn.active,
+  .inicio-bienvenida,.aula-diapo,.syllabus-editor,.syllabus-bloque,.content .activity-row,.content .request-row,
+  .content .helper-note,.aula-pregunta,.aula-lectura,.chat-messages,.bubble.ai,.assistant-messages,
+  .sesion-siguiente-paso,.docencia-secundaria,.tag,.course-badge) {background:#223e56;color:var(--ink);border-color:var(--line)}
+.grace-oscura .sidebar .nav-btn.active {box-shadow:inset 4px 0 0 #93c8f1}
+.grace-oscura :is(.inicio-tarjeta.inicio-ambar,.tag.amber,.tag.estado-pendiente) {background:#4a391e;color:#ffe3a1}
+.grace-oscura :is(.inicio-tarjeta.inicio-violeta,.comunidad-publicacion) {background:#332d4d;color:#eee3ff}
+.grace-oscura :is(.inicio-tarjeta.inicio-verde,.tag.green,.tag.estado-confirmado) {background:#234737;color:#c3f1cf}
+.grace-oscura :is(.inicio-tarjeta.inicio-coral,.tag.red,.tag.estado-alerta,.content .aviso-error,.content #notice.error) {background:#502f39;color:#ffd5cb}
+.grace-oscura .inicio-tarjeta.inicio-turquesa {background:#204644;color:#c8f6ec}
+.grace-oscura .inicio-icono {background:#0e1e30;color:var(--ink)}
+.grace-oscura :is(.page-heading p,.panel-heading p,.activity-row p,.request-row p,.form label,
+  .nav-grupo,.micro,.helper-note,.horario-hora,.aula-material-marca,.aula-material-folio,
+  .syllabus-editor summary,.aula-lectura h4,.paso-docente,.aviso-docente,#comunidad summary) {color:var(--muted)}
+.grace-oscura :is(.form input,.form select,.form textarea,.chat-compose input,.assistant-dock input) {
+  background:#102438;color:var(--ink);border-color:#789bb7
+}
+.grace-oscura :is(input,textarea)::placeholder {color:var(--muted)}
+.grace-oscura :is(a,.text-btn) {color:#a8d6ff}
+.grace-oscura :is(.outline-btn,.small-btn,.mini-btn,.mobile-nav-btn):not(.primary-btn) {
+  background:#243d55;color:#edf5fc;border-color:#789bb7
+}
+.grace-oscura :is(.content,.sidebar) :is(summary,button,a,input,textarea,select):focus-visible {outline-color:var(--focus)}
+.grace-oscura :is(.aula-diapo li,.aula-diagrama li,[data-aula-agenda] h3) {background:#192f46;color:var(--ink)}
+.grace-oscura [data-aula-agenda] .aula-paso[aria-current="step"] {background:#204644;color:#c8f6ec}
+

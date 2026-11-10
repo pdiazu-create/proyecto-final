@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 from urllib.request import urlopen
+from version_grace import servidor_actual
 
 BASE = Path(__file__).resolve().parent
 URL = 'http://127.0.0.1:8000'
@@ -23,16 +24,25 @@ def salud():
         return None
 
 
-def iniciar(clave):
-    if salud():
-        return 'existente'
-    if not clave.strip():
+def iniciar(clave='', modo='api'):
+    estado = salud()
+    if estado:
+        if servidor_actual(estado):
+            return 'existente'
+        raise ValueError('Grace necesita reiniciarse. Usa Detener Grace y después Abrir Grace.')
+    if modo not in ('api', 'reglas'):
+        raise ValueError('Modo del asistente inválido.')
+    if modo == 'api' and not clave.strip():
         raise ValueError('Introduce la clave de Gemini en esta ventana.')
     entorno = os.environ.copy()
     token = secrets.token_hex(16)
-    entorno.update(GRACE_IA='api', GRACE_IA_PROVEEDOR='gemini',
+    entorno.update(GRACE_IA=modo, GRACE_IA_PROVEEDOR='gemini', PORT='8000',
                    GRACE_IA_MODEL='gemini-3.5-flash-lite', GRACE_IA_TIMEOUT='30',
-                   GRACE_IA_KEY=clave.strip(), GRACE_INSTANCIA=token)
+                   GRACE_INSTANCIA=token)
+    if modo == 'api':
+        entorno['GRACE_IA_KEY'] = clave.strip()
+    else:
+        entorno.pop('GRACE_IA_KEY', None)
     ejecutable = Path(sys.executable)
     sin_consola = ejecutable.with_name('pythonw.exe')
     if os.name == 'nt' and sin_consola.exists():

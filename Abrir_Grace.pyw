@@ -7,12 +7,13 @@ from tkinter import ttk, messagebox
 import webbrowser
 
 from gestor_grace import iniciar, detener, salud, URL
+from version_grace import servidor_actual
 
 
 def main():
     ventana = tk.Tk()
     ventana.title('Grace')
-    ventana.geometry('460x275')
+    ventana.geometry('460x325')
     ventana.resizable(False, False)
     ventana.configure(background='#f4f8fb')
     if '--detener' in sys.argv:
@@ -27,7 +28,7 @@ def main():
     servidor = salud()
     if servidor:
         ventana.withdraw()
-        if servidor.get('publicacion_conjunta'):
+        if servidor_actual(servidor):
             webbrowser.open(URL)
         else:
             messagebox.showwarning('Grace necesita reiniciarse',
@@ -48,29 +49,30 @@ def main():
     eventos = queue.Queue()
     ocupado = False
 
-    def tarea(clave):
+    def tarea(clave, modo):
         try:
-            iniciar(clave)
+            iniciar(clave, modo)
             eventos.put(True)
         except ValueError as error:
             eventos.put(str(error))
         except Exception:
             eventos.put('No se pudo iniciar Grace. Revisa Python y la carpeta del proyecto.')
 
-    def abrir():
+    def abrir(modo='api'):
         nonlocal ocupado
         if ocupado:
             return
         clave = entrada.get().strip()
-        if not clave:
+        if modo == 'api' and not clave:
             estado.configure(text='Introduce la clave en el campo privado.')
             return
         ocupado = True
         entrada.delete(0, 'end')
         entrada.configure(state='disabled')
         boton.configure(state='disabled')
+        boton_reglas.configure(state='disabled')
         estado.configure(text='Iniciando Grace…')
-        threading.Thread(target=tarea, args=(clave,), daemon=True).start()
+        threading.Thread(target=tarea, args=(clave if modo == 'api' else '', modo), daemon=True).start()
 
     def revisar():
         nonlocal ocupado
@@ -87,10 +89,14 @@ def main():
         estado.configure(text=resultado)
         entrada.configure(state='normal')
         boton.configure(state='normal')
+        boton_reglas.configure(state='normal')
         ventana.after(150, revisar)
 
     boton = ttk.Button(panel, text='Abrir Grace', command=abrir)
     boton.pack(fill='x', ipady=5)
+    boton_reglas = ttk.Button(panel, text='Abrir con reglas locales (sin clave)',
+                             command=lambda: abrir('reglas'))
+    boton_reglas.pack(fill='x', ipady=5, pady=(8, 0))
     entrada.bind('<Return>', lambda _e: abrir())
     ventana.protocol('WM_DELETE_WINDOW', lambda: None if ocupado else ventana.destroy())
     entrada.focus_set()

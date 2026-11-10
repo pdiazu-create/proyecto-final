@@ -25,6 +25,10 @@ from grace.ia import modo_ia
 from grace.cuentas import Cuentas, ErrorAcceso, COOKIE
 from grace.perfiles import RecursosPerfiles, catalogo
 from grace.cursos import Cursos
+from version_grace import revision_codigo
+
+# Capturada al cargar el proceso, nunca recalculada desde los archivos cambiados.
+REVISION_INICIO = revision_codigo()
 
 BASE = Path(__file__).resolve().parent
 WEB = BASE / 'web'
@@ -114,7 +118,7 @@ class ManejadorGrace(BaseHTTPRequestHandler):
         params = parse_qs(url.query)
         try:
             if url.path == '/api/salud':
-                return self._json(200, {'estado': 'ok', 'version': '0.4',
+                return self._json(200, {'estado': 'ok', 'version': '0.4', 'revision': REVISION_INICIO,
                                         'modo': modo_ia(), 'cursos': True, 'proceso': os.getpid(),
                                         'instancia': os.environ.get('GRACE_INSTANCIA', '')})
             if url.path == '/api/estado':
@@ -223,7 +227,7 @@ class ManejadorGrace(BaseHTTPRequestHandler):
         cuentas, servicio = self.server.cuentas, self.server.servicio
         try:
             if metodo == 'GET' and ruta == '/api/salud':
-                return self._json(200, {'estado': 'ok', 'version': '0.4', 'modo': modo_ia(),
+                return self._json(200, {'estado': 'ok', 'version': '0.4', 'revision': REVISION_INICIO, 'modo': modo_ia(),
                     'proceso': os.getpid(), 'instancia': os.environ.get('GRACE_INSTANCIA', ''),
                     'autenticacion': True, 'cursos': True, 'publicacion_conjunta': True})
             if metodo == 'GET' and not ruta.startswith('/api/'):

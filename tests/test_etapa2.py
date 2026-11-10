@@ -19,8 +19,8 @@ class PruebasEtapa2(unittest.TestCase):
     def test_menu_tiene_paginas_reales_y_un_activo(self):
         paginas = re.findall(r'<button[^>]*class="nav-btn[^>]*data-page="([^"]+)"', self.html)
         principales = [p for p in paginas if p not in ('estructuras', 'asistente', 'docentes')]
-        self.assertEqual(principales, ['inicio', 'cursos', 'calendario', 'asistencia'])
-        for pagina in ('inicio', 'cursos', 'curso', 'calendario', 'asistencia'):
+        self.assertEqual(principales, ['inicio', 'cursos', 'calendario', 'asistencia', 'comunidad'])
+        for pagina in ('inicio', 'cursos', 'curso', 'calendario', 'asistencia', 'comunidad'):
             self.assertIn(f'id="{pagina}"', self.html)
         self.assertEqual(len(re.findall(r'<button class="nav-btn active"', self.html)), 1)
         self.assertIn('aria-current', self.js)

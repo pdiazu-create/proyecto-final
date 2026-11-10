@@ -29,9 +29,13 @@ def contraste(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
-def _ultima_variable(css, nombre):
-    """Valor final de una variable CSS (la última definición es la que rige)."""
-    valores = re.findall(r'--' + nombre + r'\s*:\s*(#[0-9a-fA-F]{6})', css)
+def _ultima_variable(css, nombre, tema='claro'):
+    """Última definición del ámbito activo, sin mezclar claro con oscuro."""
+    selector = r':root' if tema == 'claro' else r'body\.grace-oscura'
+    bloques = re.findall(selector + r'\s*\{([^}]+)\}', css)
+    valores = re.findall(r'--' + nombre + r'\s*:\s*(#[0-9a-fA-F]{6})', '\n'.join(bloques))
+    if not valores:
+        raise AssertionError(f'Falta el color {nombre} del tema {tema}')
     return valores[-1]
 
 
@@ -56,18 +60,17 @@ class PruebasInterfaz(unittest.TestCase):
 
     def test_colores_representativos_alcanzan_contraste_aa(self):
         css = _leer('styles.css')
-        muted = _ultima_variable(css, 'muted')
-        pares = [
-            ('texto principal sobre blanco', _ultima_variable(css, 'ink'), '#ffffff'),
-            ('texto secundario sobre blanco', muted, '#ffffff'),
-            ('texto secundario sobre el menú lateral', muted, _ultima_variable(css, 'sidebar')),
-            ('texto blanco sobre botón principal', '#ffffff', _ultima_variable(css, 'primary')),
-        ]
-        for nombre, texto, fondo in pares:
-            with self.subTest(nombre):
-                self.assertGreaterEqual(contraste(texto, fondo), 4.5)
-        # El contorno de foco es un elemento gráfico: mínimo 3:1.
-        self.assertGreaterEqual(contraste(_ultima_variable(css, 'focus'), '#ffffff'), 3.0)
+        for tema in ('claro', 'oscuro'):
+            color = lambda nombre: _ultima_variable(css, nombre, tema)
+            for superficie in ('surface', 'bg', 'sidebar', 'welcome'):
+                for texto in ('ink', 'muted', 'teal'):
+                    with self.subTest(tema=tema, texto=texto, fondo=superficie):
+                        self.assertGreaterEqual(contraste(color(texto), color(superficie)), 4.5)
+                # El contorno de foco es un elemento gráfico: mínimo 3:1.
+                with self.subTest(tema=tema, foco=superficie):
+                    self.assertGreaterEqual(contraste(color('focus'), color(superficie)), 3.0)
+            with self.subTest(tema=tema, boton='principal'):
+                self.assertGreaterEqual(contraste('#ffffff', color('primary')), 4.5)
 
     def test_movimiento_reducido_declara_preferencia(self):
         css = _leer('styles.css')

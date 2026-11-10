@@ -15,3 +15,9 @@ data/.grace_inicializada
 data/cursos/
 data/.cursos_inicializados
 data/.cuentas_inicializadas
+
+# Datos privados, archivos adjuntos y marcadores de ejecución local.
+data/**
+!data/.gitkeep
+.grace_proceso.json
+*.log

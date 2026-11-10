@@ -25,7 +25,14 @@ class AjusteIntegral(unittest.TestCase):
         botones={dict(a).get('data-page'):dict(a) for t,a in p.tags if t=='button' and 'mobile-nav-btn' in dict(a).get('class','').split()}
         for pagina in ('docentes','estructuras'):self.assertIn('teacher-nav',botones[pagina]['class'].split())
         self.assertIn('student-nav',botones['asistencia']['class'].split())
-        self.assertEqual(len(botones),7)
+        self.assertEqual(set(botones), {'inicio', 'cursos', 'calendario', 'asistencia',
+                                        'docentes', 'estructuras', 'asistente', 'comunidad'})
+        self.assertIn('comunidad-nav', botones['comunidad']['class'].split())
+        self.assertNotIn('teacher-nav', botones['comunidad']['class'].split())
+        self.assertNotIn('student-nav', botones['comunidad']['class'].split())
+        # No ocultar duplicados al construir el diccionario por página.
+        self.assertEqual(sum(t == 'button' and 'mobile-nav-btn' in dict(a).get('class', '').split()
+                             for t, a in p.tags), len(botones))
 
     @unittest.skipUnless(shutil.which('node'),'Node solo es necesario para verificar el cliente')
     def test_recorrido_y_aislamiento_con_datos_falsos(self):
