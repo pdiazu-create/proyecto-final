@@ -91,6 +91,30 @@ def detectar_intencion(mensaje):
     return mejor if puntuaciones[mejor] else 'desconocida'
 
 
+def proponer_accion(mensaje):
+    """Respaldo local para acciones simples; nunca concede permisos."""
+    texto = _normalizar(mensaje)
+    if any(p in texto for p in ('oscuro', 'oscura', 'claro', 'clara')) and any(
+            p in texto for p in ('tema', 'modo', 'ponlo', 'pon el', 'cambia')):
+        tema = 'oscuro' if 'oscuro' in texto or 'oscura' in texto else 'claro'
+        return {'accion': 'cambiar_tema', 'parametros': {'tema': tema}, 'respuesta': ''}
+    if re.search(r'\b(cambia|cambiar|alterna|alternar)\b', texto) and re.search(
+            r'\b(tema|modo)\b', texto):
+        return {'accion': 'cambiar_tema', 'parametros': {'tema': 'alternar'}, 'respuesta': ''}
+    if ('semana' in texto and any(p in texto for p in ('horario', 'clase', 'hora', 'resumen'))
+            or 'resume esta semana' in texto or 'resumen de esta semana' in texto):
+        return {'accion': 'resumen_semanal', 'parametros': {}, 'respuesta': ''}
+    if any(p in texto for p in ('proxima clase', 'proximo curso', 'siguiente clase',
+                                 'cuando tengo clase', 'cuando es mi clase',
+                                 'proxima sesion', 'siguiente sesion')):
+        return {'accion': 'proxima_sesion', 'parametros': {}, 'respuesta': ''}
+    if 'horario' in texto:
+        return {'accion': 'abrir_pantalla', 'parametros': {'pantalla': 'calendario'}, 'respuesta': ''}
+    if 'mis clases' in texto or 'mis cursos' in texto:
+        return {'accion': 'abrir_pantalla', 'parametros': {'pantalla': 'mis-clases'}, 'respuesta': ''}
+    return {'accion': 'ninguna', 'parametros': {}, 'respuesta': ''}
+
+
 def generar_borrador_plan(objetivo, tema):
     """Una plantilla distinta por cada tema oficial; siempre es un borrador."""
     if tema not in PLANTILLAS:

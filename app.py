@@ -25,6 +25,7 @@ from grace.ia import modo_ia
 from grace.cuentas import Cuentas, ErrorAcceso, COOKIE
 from grace.perfiles import RecursosPerfiles, catalogo
 from grace.cursos import Cursos
+from grace.acciones import GestorAcciones
 from version_grace import revision_codigo
 
 # Capturada al cargar el proceso, nunca recalculada desde los archivos cambiados.
@@ -261,12 +262,14 @@ class ManejadorGrace(BaseHTTPRequestHandler):
                 '/api/buscar': {'profesor', 'estudiante'}, '/api/ruta': {'profesor', 'estudiante'}}
             permitidos_post = {'/api/logout': {'estudiante', 'profesor', 'coordinador'},
                 '/api/perfil/imagen': {'estudiante', 'profesor', 'coordinador'},
-                '/api/perfil': {'estudiante', 'profesor', 'coordinador'}, '/api/cuentas': {'coordinador'},
+                '/api/perfil': {'estudiante', 'profesor', 'coordinador'},
+                '/api/preferencias': {'estudiante', 'profesor', 'coordinador'},
+                '/api/cuentas': {'coordinador'},
                 '/api/planes': {'profesor'}, '/api/planes/editar': {'profesor'},
                 '/api/planes/estado': {'profesor'}, '/api/asistencia': {'profesor'},
                 '/api/asistencia/lote': {'profesor'}, '/api/atender': {'profesor'},
                 '/api/entregas': {'estudiante'}, '/api/solicitudes': {'estudiante'},
-                '/api/conversar': {'profesor', 'estudiante'}, '/api/reiniciar': set()}
+                '/api/conversar': {'profesor', 'estudiante', 'coordinador'}, '/api/reiniciar': set()}
             permisos = permitidos_get if metodo == 'GET' else permitidos_post
             if ruta not in permisos or (metodo == 'POST' and self.path != ruta):
                 raise ErrorAcceso(404, 'Ruta no encontrada.')
@@ -281,7 +284,7 @@ class ManejadorGrace(BaseHTTPRequestHandler):
                         raise ErrorAcceso(403, 'Solo puedes consultar tus datos.')
             academicas = {'/api/estado', '/api/buscar', '/api/ruta', '/api/planes',
                 '/api/planes/editar', '/api/planes/estado', '/api/asistencia', '/api/asistencia/lote',
-                '/api/atender', '/api/entregas', '/api/solicitudes', '/api/conversar'}
+                '/api/atender', '/api/entregas', '/api/solicitudes'}
             if metodo == 'GET' and ruta in academicas:
                 curso_ids = params.get('curso_id', [])
                 if len(curso_ids) > 1:
@@ -316,8 +319,37 @@ class ManejadorGrace(BaseHTTPRequestHandler):
                 resultado = self.server.recursos.perfil(cuentas.editar(usuario['id'], datos))
             elif ruta == '/api/perfil/imagen':
                 resultado = self.server.recursos.editar(usuario['id'], datos)
+            elif ruta == '/api/preferencias':
+                resultado = self.server.recursos.guardar_preferencia(usuario['id'], datos)
             elif ruta == '/api/cuentas':
                 resultado = self.server.recursos.perfil(cuentas.crear(datos))
+            elif ruta == '/api/conversar':
+                if (rol == 'estudiante' and 'estudiante_id' in datos and
+                        datos['estudiante_id'] != usuario['estudiante_id']):
+                    raise ErrorAcceso(403, 'Solo puedes consultar tus propios datos.')
+                if rol == 'coordinador' and ('rol' in datos or not isinstance(datos.get('mensaje'), str)):
+                    raise ErrorAcceso(403, 'Esta consulta no está disponible para coordinación.')
+                resultado = self.server.acciones.procesar(
+                    datos.get('mensaje'), usuario, token,
+                    self.server.cursos.ia, self.server.cursos)
+                if resultado is None and rol == 'coordinador':
+                    resultado = {'respuesta': 'Puedo ayudarte a cambiar la apariencia o abrir una pantalla. '
+                                               'Tus datos académicos no están disponibles en este espacio.',
+                                 'origen': 'reglas'}
+                elif resultado is None:
+                    servicio = self.server.cursos.servicio(datos.get('curso_id', 'principal'), usuario)
+                    conversacion = {
+                        'mensaje': datos.get('mensaje'),
+                        'rol': 'docente' if rol == 'profesor' else 'estudiante',
+                        'estudiante_id': usuario.get('estudiante_id'),
+                    }
+                    resultado = servicio.conversar_detallado(
+                        conversacion, solo_propio=rol == 'estudiante')
+                if self.server.acciones.filtrar_respuesta(resultado['respuesta']):
+                    resultado['respuesta'] = (
+                        'No encontré una forma adecuada de responder. Dime qué necesitas de tus clases '
+                        'y lo revisamos con calma.'
+                    )
             else:
                 if rol == 'estudiante':
                     if 'estudiante_id' in datos and datos['estudiante_id'] != usuario['estudiante_id']:
@@ -455,6 +487,7 @@ class ServidorGrace(ThreadingHTTPServer):
         self.recursos = RecursosPerfiles(self.servicio.almacen.carpeta)
         self.servicio.registro_estudiantes = self.cuentas.estudiantes
         self.cursos = Cursos(self.servicio.almacen.carpeta, self.cuentas, self.servicio)
+        self.acciones = GestorAcciones(self.servicio.almacen.carpeta, self.recursos)
         self.trabajo = TrabajoAcademico(self.cursos)
         self.seguimiento = Seguimiento(self.cursos)
         self.comunidad = Comunidad(self.cursos)

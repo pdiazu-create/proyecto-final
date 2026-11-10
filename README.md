@@ -51,6 +51,12 @@ En **Mis clases**, los estudiantes consultan sus cursos matriculados y el conten
 
 Los horarios semanales se guardan en el servidor, muestran lunes a viernes con fechas locales y validan edificio, piso, aula y conflictos para docentes, estudiantes y espacios. Las tarjetas y horarios del catálogo de demostración están separados y marcados como ficticios. El prototipo no contiene un catálogo institucional real ni reemplaza la validación por parte de la institución.
 
+### Acciones autorizadas de Grace
+
+Grace puede cambiar el tema, abrir Mi horario o Mis clases, consultar la próxima sesión y resumir los bloques semanales registrados. La propuesta se obtiene con JSON estructurado cuando la IA está disponible; `grace/acciones.py` valida una lista cerrada y el servidor ejecuta la acción usando la identidad y el rol de la sesión. La alternativa por reglas locales conserva las acciones sencillas sin conexión. Horarios vacíos se informan como tales: Grace no los completa con los bloques ilustrativos del navegador.
+
+El tema se guarda por cuenta en `data/preferencias.json`. Los intentos de acción se registran en `data/acciones.jsonl` sin copiar el mensaje privado. Las expresiones bloqueadas se pueden ajustar en `config/palabras_bloqueadas.json`. El límite actual del chat es de 500 caracteres, 10 mensajes por minuto por cuenta y 8 acciones por sesión autenticada. Estas medidas son para la demostración local, no sustituyen controles de producción.
+
 La configuración de cursos se guarda en `data/cursos.json`. El curso principal conserva el estado académico histórico en `data/estado.json`; la primera inicialización guarda una copia verificable en `data/cursos/migraciones/estado-anterior.json`. Los cursos nuevos guardan su estado en `data/cursos/<id>/estado.json`. No borres ni reemplaces estos archivos al actualizar.
 
 ## 1. Ejecutar en Visual Studio Code (Windows)

@@ -169,7 +169,7 @@ class SeguridadCuentas(unittest.TestCase):
             contexto.update(datos)
             return {'respuesta': 'ok', 'origen': 'reglas'}
         with patch.object(self.servicio.ia, 'responder_chat', side_effect=responder):
-            self.http('/api/conversar', {'mensaje': 'resumen semana', 'rol': 'profesor'}, cookie)
+            self.http('/api/conversar', {'mensaje': 'mis pendientes', 'rol': 'profesor'}, cookie)
         self.assertEqual(contexto['rol'], 'estudiante')
         self.assertEqual(contexto['estudiante_id'], 'e1')
         self.assertEqual(contexto['cola_interna'].tamano, 1)

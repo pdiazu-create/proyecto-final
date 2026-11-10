@@ -107,11 +107,12 @@ function crearVistasCuenta() {
     <div class="profile-grid"><article class="panel profile-card"><img id="perfil-banner" class="profile-banner" alt="Banner del perfil" hidden><img id="perfil-foto" class="profile-photo" alt="Foto de perfil" hidden><div class="profile-initials" id="perfil-iniciales" aria-hidden="true"></div><h2 id="perfil-resumen-nombre"></h2><p id="perfil-resumen-rol"></p><p id="perfil-resumen-usuario"></p><span class="tag">Cuenta de demostración</span><div class="profile-media-tools"><label class="outline-btn" for="archivo-foto">Cambiar foto</label><input id="archivo-foto" class="profile-file" type="file" accept="image/jpeg,image/png,image/webp"><button id="quitar-foto" type="button" class="text-btn">Quitar foto</button><label class="outline-btn" for="archivo-banner">Cambiar banner</label><input id="archivo-banner" class="profile-file" type="file" accept="image/jpeg,image/png,image/webp"><button id="quitar-banner" type="button" class="text-btn">Quitar banner</button><p class="micro">JPG, PNG o WebP, hasta 5 MB. Se recorta al centro y se guarda sin metadatos.</p><p id="imagen-resultado" class="account-feedback" role="status" aria-live="polite"></p></div></article>
     <article class="panel"><h2>Datos personales</h2><form id="form-perfil" class="form">${camposPerfil()}<p id="perfil-resultado" class="account-feedback" role="status" aria-live="polite"></p><button class="primary-btn" type="submit">Guardar perfil</button></form></article></div>
     <section id="preferencias-lectura" class="panel preferencias-lectura">
-      <h2>Preferencias de lectura</h2><p>Los cambios se aplican al instante y se guardan en este navegador.</p>
+      <h2>Preferencias de lectura</h2><p>El tema se guarda en tu perfil. El tamaño de letra se conserva en este navegador.</p>
       <div class="form form-row">
         <label>Apariencia <select id="preferencia-tema"><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select></label>
         <label>Tamaño de letra <select id="preferencia-texto"><option value="normal">Normal</option><option value="grande">Grande</option></select></label>
       </div>
+      <p id="preferencia-feedback" class="account-feedback" role="status" aria-live="polite"></p>
     </section>`;
   const coordinacion=document.createElement('section');coordinacion.id='cuentas';coordinacion.className='page';
   coordinacion.innerHTML=`<div class="page-heading"><span class="eyebrow">COORDINACIÓN</span><h1>Cuentas de Grace</h1><p>Crea accesos de demostración y asigna el espacio de cada persona.</p></div>

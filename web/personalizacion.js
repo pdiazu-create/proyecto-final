@@ -19,7 +19,8 @@ function guardarPreferencia(tipo, valor) {
 }
 
 function aplicarLecturaGrace(apariencia = leerPreferencia('lectura', {})) {
-  const oscuro = apariencia?.tema === 'oscuro';
+  const tema = cuentaActual ? (cuentaActual.tema || 'claro') : apariencia?.tema;
+  const oscuro = tema === 'oscuro';
   const grande = apariencia?.texto === 'grande';
   document.body.classList.toggle('grace-oscura', oscuro);
   document.body.classList.toggle('grace-letra-grande', grande);
@@ -28,11 +29,37 @@ function aplicarLecturaGrace(apariencia = leerPreferencia('lectura', {})) {
 }
 
 function prepararLecturaGrace() {
-  $('preferencias-lectura').addEventListener('change', () => {
+  $('preferencias-lectura').addEventListener('change', async () => {
+    const temaAnterior = cuentaActual ? (cuentaActual.tema || 'claro') : leerPreferencia('lectura', {}).tema;
     const apariencia = {tema: $('preferencia-tema').value, texto: $('preferencia-texto').value};
+    if (cuentaActual) cuentaActual.tema = apariencia.tema;
     aplicarLecturaGrace(apariencia);
     guardarPreferencia('lectura', apariencia);
+    if (!cuentaActual || apariencia.tema === temaAnterior) return;
+    const estado = $('preferencia-feedback');
+    if (estado) estado.textContent = 'Guardando el tema en tu perfil…';
+    try {
+      const guardado = await api('/api/preferencias', {tema: apariencia.tema});
+      cuentaActual.tema = guardado.tema;
+      if (estado) estado.textContent = 'Tema guardado en tu perfil.';
+    } catch (error) {
+      if (cuentaActual) cuentaActual.tema = temaAnterior;
+      const restaurada = {...apariencia, tema: temaAnterior};
+      aplicarLecturaGrace(restaurada);
+      guardarPreferencia('lectura', restaurada);
+      if (estado) estado.textContent = `${error.message} Se mantuvo el tema anterior.`;
+    }
   });
+}
+
+function aplicarTemaDesdeGrace(tema) {
+  if (!['claro', 'oscuro'].includes(tema)) return;
+  if (cuentaActual) cuentaActual.tema = tema;
+  const apariencia = {...leerPreferencia('lectura', {}), tema};
+  guardarPreferencia('lectura', apariencia);
+  aplicarLecturaGrace(apariencia);
+  const estado = $('preferencia-feedback');
+  if (estado) estado.textContent = 'Tema guardado en tu perfil.';
 }
 
 function personalizarTarjetasGrace(vista) {

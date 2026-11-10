@@ -156,7 +156,38 @@ class RecursosPerfiles:
             return None
         with self.lock:
             recursos = self._leer()['perfiles'].get(cuenta['id'], {'foto': '', 'banner': ''})
-            return {**deepcopy(cuenta), **deepcopy(recursos)}
+            return {**deepcopy(cuenta), **deepcopy(recursos),
+                    'tema': self.preferencia_tema(cuenta['id'])}
+
+    def _leer_preferencias(self):
+        datos = self.almacen.leer('preferencias.json', {'version': 1, 'perfiles': {}})
+        if (not isinstance(datos, dict) or set(datos) != {'version', 'perfiles'} or
+                type(datos['version']) is not int or datos['version'] != 1 or
+                not isinstance(datos['perfiles'], dict)):
+            raise ErrorDatos('Preferencias de perfil corruptas.')
+        for identificador, preferencia in datos['perfiles'].items():
+            if (not re.fullmatch(r'[a-f0-9]{32}', identificador) or
+                    not isinstance(preferencia, dict) or set(preferencia) != {'tema'} or
+                    preferencia['tema'] not in ('claro', 'oscuro')):
+                raise ErrorDatos('Preferencias de perfil corruptas.')
+        return datos
+
+    def preferencia_tema(self, cuenta_id):
+        with self.lock:
+            preferencia = self._leer_preferencias()['perfiles'].get(cuenta_id)
+            return preferencia['tema'] if preferencia else 'claro'
+
+    def guardar_preferencia(self, cuenta_id, datos):
+        if (not isinstance(datos, dict) or set(datos) != {'tema'} or
+                datos['tema'] not in ('claro', 'oscuro')):
+            raise ErrorValidacion('El tema debe ser claro u oscuro.')
+        if not isinstance(cuenta_id, str) or not re.fullmatch(r'[a-f0-9]{32}', cuenta_id):
+            raise ErrorValidacion('Cuenta inválida.')
+        with self.lock:
+            preferencias = deepcopy(self._leer_preferencias())
+            preferencias['perfiles'][cuenta_id] = {'tema': datos['tema']}
+            self.almacen.guardar('preferencias.json', preferencias)
+            return {'tema': datos['tema']}
 
     def editar(self, cuenta_id, datos):
         if set(datos) != {'tipo', 'imagen'} or datos['tipo'] not in ('foto', 'banner'):

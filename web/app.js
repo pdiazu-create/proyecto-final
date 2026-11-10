@@ -373,21 +373,31 @@ async function enviarChat(mensaje, destino='chat', contexto={}) {
   }
   if (!chat) return;
   const consulta = ++secuenciaConsulta;
-  agregarMensajeChat(`<div class="bubble ai" data-consulta-pendiente="${consulta}" role="status">Grace está consultando la IA. Puede tardar hasta 30 segundos…</div>`);
+  agregarMensajeChat(`<div class="bubble ai" data-consulta-pendiente="${consulta}" role="status">Grace está preparando una respuesta…</div>`);
   const estadoAsistente = $('assistant-status');
   if (estadoAsistente) estadoAsistente.textContent = 'Consultando…';
   chat.scrollTop=chat.scrollHeight;
   try {
     const cursoAula = document.querySelector?.('#aula-grace.active')?.dataset.cursoId;
-    const datos = {mensaje,rol:rolActual === 'profesor' ? 'docente' : 'estudiante',estudiante_id:estudianteActual};
+    const datos = {mensaje};
     if (cursoAula) datos.curso_id = cursoAula;
     const r = await api('/api/conversar',{...datos,...contexto});
+    if (r.accion === 'cambiar_tema' && r.datos?.tema) aplicarTemaDesdeGrace(r.datos.tema);
+    if (r.accion === 'abrir_pantalla' && r.datos?.pantalla) navegar(r.datos.pantalla);
     const fuente = r.origen || 'reglas';
     const estadoReal = fuente === 'IA' ? 'IA conectada; respaldo de reglas disponible' :
       fuente === 'reglas (respaldo)' ? 'IA no disponible; respuesta por reglas de respaldo' : 'Asistente por reglas locales';
     document.querySelectorAll?.('[data-ia-mode]')?.forEach(e => { e.textContent = estadoReal; });
     const respuesta = escapar(r.respuesta).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
     agregarMensajeChat(`<div class="bubble ai">${respuesta}<small class="response-source">Fuente: ${fuente}</small></div>`);
+    const accesos = (r.accesos || []).filter(a =>
+      a && ['calendario','mis-clases','inicio'].includes(a.pantalla) &&
+      typeof a.etiqueta === 'string');
+    if (accesos.length) {
+      agregarMensajeChat(`<div class="assistant-shortcuts">${accesos.map(a =>
+        `<button type="button" class="mini-btn" data-grace-pantalla="${escapar(a.pantalla)}">${escapar(a.etiqueta)} →</button>`
+      ).join('')}</div>`);
+    }
     if (r.aviso) agregarMensajeChat(`<div class="helper-note" role="status">${escapar(r.aviso)}${r.estado_http ? ' (HTTP ' + Number(r.estado_http) + ')' : ''}</div>`);
     if (estadoAsistente) estadoAsistente.textContent = 'Respuesta lista';
   } catch (e) {
@@ -674,6 +684,12 @@ function prepararInterfaz() {
   });
   $('explicar-sesion').addEventListener('click',()=>{mostrarChatFlotante(true);enviarChat(`Explícame ${temaContexto || 'Listas'}`,'assistant-messages');});
   document.addEventListener('click',e=>{
+    const accesoGrace=e.target.closest('[data-grace-pantalla]');
+    if(accesoGrace){
+      const pantalla=accesoGrace.dataset.gracePantalla;
+      if(['calendario','mis-clases','inicio'].includes(pantalla))navegar(pantalla);
+      return;
+    }
     const abrir=e.target.closest('[data-sesion]'); if(abrir){abrirSesion(abrir.dataset.sesion);return;}
     const vista=e.target.closest('[data-curso-vista]'); if(vista){pestanaCurso=vista.dataset.cursoVista;navegar('curso');return;}
     const filtro=e.target.closest('[data-filtro-sesion]'); if(filtro){filtroSesiones=filtro.dataset.filtroSesion;renderizarSesiones();return;}

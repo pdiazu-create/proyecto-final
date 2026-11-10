@@ -8,6 +8,7 @@
 `grace/estructuras.py` contiene implementaciones didácticas de cola, árbol y grafo.  
 `grace/archivos.py` gestiona almacenamiento JSON.  
 `grace/asistente.py` genera borradores mediante plantillas y responde por coincidencia de palabras.
+`grace/catalogo_acciones.py` define la lista blanca y los permisos; `grace/acciones.py` valida, limita, registra y ejecuta las acciones permitidas.
 
 ## B. Invariantes verificables
 
@@ -29,10 +30,16 @@ crear → borrador → en_revision ──aprobar──→ aprobado ──publica
 editar (en borrador o revisión) → borrador
 ```
 
-- La regla de transición la aplica el **servicio Python**, no la interfaz.
+- Las reglas de transición y los permisos los aplica el **servidor Python**, no la interfaz.
 - `historial` almacena acción, estado resultante, actor de demostración y marca temporal en UTC.
-- **El actor de demostración no es una identidad verificada**: la aplicación no tiene login y cualquier llamada local puede intentar una acción.
+- En el servidor principal, el actor y el rol proceden de una sesión autenticada; los campos que envía el navegador o la IA no conceden permisos.
 - La creación de una actividad publicada y su plan se guardan juntos.
+
+## Acciones autorizadas de bajo riesgo
+
+El catálogo actual permite cambiar tema, abrir pantallas autorizadas, consultar la próxima sesión y resumir el horario semanal. Cada definición incluye roles, parámetros, riesgo y requisito de confirmación. La IA propone JSON, pero el servidor valida la forma, los parámetros, la cuenta y el curso antes de ejecutar. Una acción no incluida en `CATALOGO_ACCIONES` se rechaza.
+
+Los horarios se calculan desde los cursos visibles para la cuenta autenticada. La interfaz puede mostrar bloques ilustrativos, pero Grace no los usa como datos académicos. El tema se persiste por cuenta en `preferencias.json`; los eventos de propuesta, rechazo y ejecución van a `acciones.jsonl` sin guardar los mensajes. El archivo `config/palabras_bloqueadas.json` controla el filtro de entrada y salida.
 
 ## D. Persistencia: por qué una única unidad atómica
 
@@ -55,7 +62,7 @@ Desde v0.3, el estado completo se escribe como `estado.json`. `ServicioGrace._mu
 
 ## F. Limitaciones reconocidas
 
-Hay un único conjunto de datos ficticios, un único servidor en el equipo local, sin inicio de sesión, cookies de sesión ni control real de roles. El servidor no se ha probado en producción ni en varios dispositivos. La migración de archivos antiguos no elimina los originales y debe usarse solo sobre los datos de esta demo, con respaldo si son valiosos.
+El servidor principal exige sesión y verifica roles, pero las cuentas y cursos de este prototipo son ficticios y permanecen en archivos locales. Los bloqueos de chat se conservan en memoria y se reinician al reiniciar el proceso. El registro JSONL y los archivos JSON no sustituyen una base transaccional, auditoría centralizada ni alta disponibilidad. `demo_grace.py` es una demostración aislada y no debe confundirse con el servidor principal autenticado. Nada de esto se ha certificado para producción ni para datos institucionales reales.
 
 ## G. Preguntas para la defensa
 
