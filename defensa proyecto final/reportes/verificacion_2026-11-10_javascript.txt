@@ -1,0 +1,16 @@
+OK: sesiones por fecha y entrega, sin filtración de borradores/XSS, lectura sin mutación, navegación única y asistencia sin registrar.
+✔ tests\ajuste_integral.test.cjs (380.0995ms)
+OK: abrir, cerrar, reabrir, respuesta en flotante y chat, desactivado sin red.
+✔ tests\chat_flotante.test.cjs (316.964ms)
+OK: sesión caducada, perfiles por rol y escape de nombres.
+✔ tests\cuentas_cliente.test.cjs (335.8874ms)
+OK: listas vinculadas, cambio de facultad, recorte foto/banner y rechazo de tipo/tamaño.
+✔ tests\perfil_visual.test.cjs (186.1599ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 607.4226

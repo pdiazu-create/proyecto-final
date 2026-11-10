@@ -1,0 +1,50 @@
+...IA no disponible: error_red
+..............127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes/estado HTTP/1.1" 400 -
+C:\Python314\Lib\tempfile.py:484: ResourceWarning: Implicitly cleaning up <HTTPError 400: 'Bad Request'>
+  _warnings.warn(self.warn_message, ResourceWarning)
+127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes/estado HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes/estado HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes/estado HTTP/1.1" 200 -
+.127.0.0.1 - - [10/Nov/2026 08:16:51] "GET /api/salud HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "GET /api/estado HTTP/1.1" 200 -
+.127.0.0.1 - - [10/Nov/2026 08:16:51] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "GET /styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:16:51] "GET /favicon.svg HTTP/1.1" 200 -
+.127.0.0.1 - - [10/Nov/2026 08:16:51] "GET /api/estado HTTP/1.1" 403 -
+C:\Python314\Lib\tempfile.py:484: ResourceWarning: Implicitly cleaning up <HTTPError 403: 'Forbidden'>
+  _warnings.warn(self.warn_message, ResourceWarning)
+127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes HTTP/1.1" 403 -
+.127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/planes HTTP/1.1" 413 -
+C:\Python314\Lib\tempfile.py:484: ResourceWarning: Implicitly cleaning up <HTTPError 413: 'Content Too Large'>
+  _warnings.warn(self.warn_message, ResourceWarning)
+.127.0.0.1 - - [10/Nov/2026 08:16:51] "POST /api/reiniciar HTTP/1.1" 400 -
+.......................127.0.0.1 - - [10/Nov/2026 08:17:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /profesor HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /estudiante HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /horario.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /catalogo_demo.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /api/estado?estudiante=e1 HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /api/buscar?id=1 HTTP/1.1" 200 -
+.127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /profesor HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /estudiante HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /horario.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:01] "GET /catalogo_demo.js HTTP/1.1" 200 -
+......................................127.0.0.1 - - [10/Nov/2026 08:17:52] "POST /api/asistencia/lote HTTP/1.1" 200 -
+127.0.0.1 - - [10/Nov/2026 08:17:52] "POST /api/asistencia/lote HTTP/1.1" 400 -
+.........................................IA no disponible: secreto_en_respuesta
+.....IA no disponible: frecuencia
+..IA no disponible: campos_faltantes
+IA no disponible: campo_invalido
+...IA no disponible: sin_clave
+.IA no disponible: error_red
+IA no disponible: HTTP 500
+IA no disponible: error_red
+C:\Python314\Lib\tempfile.py:484: ResourceWarning: Implicitly cleaning up <HTTPError 500: 'error'>
+  _warnings.warn(self.warn_message, ResourceWarning)
+............................................................
+----------------------------------------------------------------------
+Ran 196 tests in 127.368s
+
+OK
