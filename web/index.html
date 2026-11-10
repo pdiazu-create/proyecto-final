@@ -10,20 +10,33 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="/catalogo_demo.js" defer></script>
   <script src="/horario.js" defer></script>
+  <script src="/cursos.js" defer></script>
+  <script src="/trabajo.js" defer></script>
+  <script src="/seguimiento.js" defer></script>
+  <script src="/comunidad.js" defer></script>
+  <script src="/personalizacion.js" defer></script>
+  <script src="/cuentas.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
-<body>
+<body class="cuentas-activa">
   <section id="role-gate" class="role-gate" aria-labelledby="role-title">
     <div class="role-card">
-      <div class="role-brand"><span class="brand-star" aria-hidden="true">✦</span><span>GRACE AI</span></div>
+      <div class="role-brand"><img class="role-logo" src="/favicon.svg" alt="Grace: puente de aprendizaje"><span>GRACE AI</span></div>
       <span class="eyebrow">PLATAFORMA VIRTUAL DE APRENDIZAJE</span>
-      <h1 id="role-title">Elige tu rol</h1>
+      <h1 id="role-title">Bienvenido a Grace</h1>
       <p>Accede a tus cursos y recursos académicos desde el espacio que corresponde a tu experiencia.</p>
-      <div class="role-options">
+      <div class="role-options" hidden>
         <a href="/estudiante" class="role-choice role-student" data-role="estudiante"><span class="role-icon" aria-hidden="true">🎓</span><strong>Estudiante</strong><span>Entrar al área personal →</span></a>
         <a href="/profesor" class="role-choice role-teacher" data-role="profesor"><span class="role-icon" aria-hidden="true">▤</span><strong>Profesor</strong><span>Entrar al espacio docente →</span></a>
       </div>
-      <p class="role-disclaimer">Simulación de rol, sin autenticación real</p>
+      <p class="role-disclaimer">Demostración con cuentas ficticias. Contraseña de prueba: 12345</p>
+      <form id="form-acceso" class="form account-login" hidden>
+        <label for="acceso-usuario">Usuario</label><input id="acceso-usuario" name="usuario" autocomplete="username" maxlength="32" required>
+        <label for="acceso-clave">Contraseña</label><input id="acceso-clave" name="contrasena" type="password" autocomplete="current-password" maxlength="128" required>
+        <p id="acceso-error" class="account-feedback" role="alert"></p>
+        <button class="primary-btn" type="submit">Entrar</button>
+        <details class="demo-access"><summary>Cuentas de demostración</summary><p>Estudiantes: <b>ana</b>, <b>diego</b>, <b>sofia</b><br>Profesor: <b>martin</b><br>Coordinación: <b>coordinacion</b></p><p>Contraseña de prueba para todas: <b>12345</b></p></details>
+      </form>
     </div>
   </section>
   <div class="shell">
@@ -36,14 +49,20 @@
 </svg></div><div><b>GRACE AI</b><small>Plataforma de aprendizaje</small></div></div>
       <div class="workspace"><span class="workspace-icon">✦</span><div><b id="role-label">Área personal</b><small>Tu espacio de aprendizaje</small></div></div>
       <div class="nav-heading">TU ESPACIO</div>
-      <nav class="nav">
+      <button id="menu-toggle" class="outline-btn menu-toggle" type="button" aria-expanded="true" aria-controls="menu-principal">☰ <span>Reducir menú</span></button>
+      <nav id="menu-principal" class="nav">
+        <p class="nav-grupo">Inicio</p>
         <button class="nav-btn active" data-page="inicio"><span>⌂</span> Área personal</button>
-        <button class="nav-btn student-nav" data-page="cursos"><span>▤</span> Mis cursos</button>
-        <button class="nav-btn student-nav" data-page="calendario"><span>▣</span> Calendario</button>
+        <p class="nav-grupo">Trabajo académico</p>
+        <button class="nav-btn account-courses" data-page="cursos"><span>▤</span> Mis clases</button>
+        <button class="nav-btn" data-page="calendario"><span aria-hidden="true">▦</span> Mi horario</button>
         <button class="nav-btn student-nav" data-page="asistencia"><span>◷</span> Asistencia</button>
+        <button class="nav-btn teacher-nav" data-page="docentes"><span aria-hidden="true">✓</span> Planes y asistencia</button>
+        <p class="nav-grupo nav-grupo-ayuda">Ayuda</p>
         <button class="nav-btn teacher-nav" data-page="estructuras"><span>☷</span> Solicitudes de ayuda</button>
         <button class="nav-btn" data-page="asistente"><span>✧</span> Asistente Grace</button>
-        <button class="nav-btn teacher-nav" data-page="docentes"><span>▤</span> Espacio docente</button>
+        <button class="nav-btn comunidad-nav" data-page="comunidad"><span aria-hidden="true">☷</span> Comunidad</button>
+        <p class="nav-grupo" id="menu-cuenta-titulo" hidden>Cuenta</p>
       </nav>
       <div class="sidebar-bottom"><span class="dot"></span><div><b>Servidor local</b><small>Espacio local</small></div></div>
     </aside>
@@ -54,13 +73,14 @@
 <path d="m24 36 8-8 8 8" fill="none" stroke="#1B7158" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg><span>GRACE AI</span></div><div class="top-title"><strong>GRACE AI</strong><span>Plataforma de aprendizaje</span></div><div class="top-actions"><span class="user-chip"><span class="user-avatar" aria-hidden="true">◉</span><span id="user-label">Usuario</span></span><a class="small-btn" href="/" id="cambiar-acceso">Cambiar acceso</a><button class="small-btn assistant-open" id="assistant-open" type="button">Abrir Grace</button><button class="small-btn" id="reset" title="Restaurar información">↻ Restablecer</button></div></header>
       <nav class="mobile-nav" aria-label="Navegación móvil">
-        <button class="mobile-nav-btn active" data-page="inicio">Inicio</button><button class="mobile-nav-btn" data-page="cursos">Cursos</button><button class="mobile-nav-btn" data-page="calendario">Calendario</button><button class="mobile-nav-btn" data-page="asistencia">Asistencia</button><button class="mobile-nav-btn" data-page="estructuras" class="teacher-nav">Solicitudes</button><button class="mobile-nav-btn" data-page="asistente">Grace</button>
+        <button class="mobile-nav-btn active" data-page="inicio">Inicio</button>        <button class="mobile-nav-btn account-courses" data-page="cursos">Clases</button><button class="mobile-nav-btn" data-page="calendario">Horario</button><button class="mobile-nav-btn student-nav" data-page="asistencia">Asistencia</button><button class="mobile-nav-btn teacher-nav" data-page="estructuras">Solicitudes</button><button class="mobile-nav-btn teacher-nav" data-page="docentes">Planes y asistencia</button><button class="mobile-nav-btn" data-page="asistente">Grace</button><button class="mobile-nav-btn comunidad-nav" data-page="comunidad">Comunidad</button>
       </nav>
       <div class="content">
         <div id="notice" role="alert" aria-live="assertive"></div>
         <div id="loading-status" class="loading-status" role="status" aria-live="polite" hidden><span class="loading-indicator" aria-hidden="true"></span> Actualizando información del curso…</div>
         <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
         <section id="inicio" class="page active">
+          <div id="inicio-academico"></div>
           <div class="hero"><div><span class="eyebrow">ÁREA PERSONAL</span><h1>Tu aprendizaje,<br><i>en un solo lugar.</i></h1><p>Consulta tus cursos, fechas, entregas y asistencia. Grace puede acompañarte cuando tú lo decidas.</p><button class="primary-btn" data-go="cursos">Ver mis cursos <span>→</span></button></div><div class="hero-art" aria-hidden="true">
               <div class="plan-preview">
                 <div class="preview-overline"><span class="preview-icon">✧</span> Vista previa de un plan <span class="preview-number">#001</span></div>
@@ -75,12 +95,18 @@
                 <div class="preview-foot">Vista previa del plan</div>
               </div>
             </div></div>
-          <div class="dashboard-grid">
+          <div class="section-heading inicio-preferencias"><h2>Tu espacio</h2><button id="personalizar-inicio" type="button" class="outline-btn">Personalizar inicio</button></div>
+          <dialog id="dialogo-widgets" class="widget-dialog" aria-labelledby="titulo-widgets"><h2 id="titulo-widgets">Personalizar inicio</h2><h3>Accesos de trabajo</h3><p class="micro">Puedes ocultar o mover estas tarjetas. La tarjeta principal permanece visible.</p>
+          <div id="lista-tarjetas-rol"></div>
+          <button id="restablecer-tarjetas-rol" class="outline-btn" type="button">Restablecer accesos</button>
+          <div class="widgets-complementarios"><h3>Tarjetas complementarias</h3><div id="lista-widgets"></div></div>
+          <label for="movimiento">Movimiento</label><select id="movimiento"><option value="auto">Automático</option><option value="off">Apagado</option></select><div class="plan-actions"><button id="restablecer-widgets" class="outline-btn widgets-complementarios" type="button">Restablecer tarjetas</button><button id="cerrar-widgets" class="primary-btn" type="button">Listo</button></div></dialog>
+          <div class="dashboard-grid" id="widgets-inicio">
             <article class="panel course-card"><div class="panel-heading"><div><span class="eyebrow">CURSO DESTACADO</span><h3>Programación Estructurada</h3><p>Grupo 6 · Tu progreso</p></div><span class="course-badge">Curso</span></div><div class="progress-line"><span id="course-progress"></span></div><div class="progress-meta"><strong id="course-progress-label">Calculando…</strong><span id="course-progress-detail">Entregas / actividades</span></div></article>
             <article class="panel"><div class="panel-heading"><div><span class="eyebrow">PRÓXIMAS ACTIVIDADES</span><h3>Calendario</h3><p>Ordenado por fecha real</p></div><button class="text-btn" data-go="calendario">Ver todo →</button></div><div id="preview-actividades" class="stack"></div></article>
             <article class="panel attendance-card"><div class="panel-heading"><div><span class="eyebrow">SEGUIMIENTO</span><h3>Asistencia</h3><p>Registros del estudiante seleccionado</p></div><span class="icon-chip">◷</span></div><div id="dashboard-attendance" class="attendance-summary">Cargando registros…</div><button class="outline-btn" type="button" data-go="asistencia">Ver asistencia →</button></article>
           </div>
-          <div class="section-heading"><h2>Tu actividad en un vistazo</h2><span>Resumen del curso</span></div>
+          <div class="section-heading inicio-resumen-curso"><h2>Tu actividad en un vistazo</h2><span>Resumen del curso</span></div>
           <div class="stats"><div class="stat"><span>Actividades publicadas</span><strong id="stat-actividades">—</strong><small>Del curso</small></div><div class="stat"><span>Entregas registradas</span><strong id="stat-entregas">—</strong><small>Registradas</small></div><div class="stat"><span>Ayudas en espera</span><strong id="stat-ayudas">—</strong><small>Solicitudes pendientes</small></div><div class="stat"><span>Planes creados</span><strong id="stat-planes">—</strong><small>Con aprobación docente</small></div></div>
           <div class="tour-title teacher-content"><span class="eyebrow">UNA EXPERIENCIA CON SENTIDO</span><h2>Organiza tu curso.</h2><p>Prepara actividades, revisa planes y acompaña a tus estudiantes.</p></div>
           <div class="journey-grid teacher-content" aria-label="Recorrido de un plan de clase">
@@ -91,22 +117,29 @@
           </div>
           <div class="twocol legacy-home-panels"><article class="panel soft"><div class="panel-heading"><div><h3>Lo que hace Grace</h3><p>Tu asistente operativo, explicado</p></div><span class="little-symbol">✳</span></div><div class="benefit"><span class="benefit-icon">✓</span><div><b>El profesor mantiene el control</b><p>Los planes pasan por revisión y aprobación antes de publicarse.</p></div></div><div class="benefit"><span class="benefit-icon">⌁</span><div><b>Cambios guardados</b><p>Tus actividades, entregas y solicitudes quedan guardadas.</p></div></div><div class="benefit"><span class="benefit-icon">↗</span><div><b>Todo en un lugar</b><p>Consulta las solicitudes, actividades y recorridos de aprendizaje.</p></div></div></article></div>
           <div class="disclosure-grid">
-            <div class="disclosure-item"><span class="status-dot done"></span><div><b>Funciona hoy</b><p>Listas, cola enlazada, archivos JSON, árbol, grafo, planes y seguimiento.</p></div></div>
+            <div class="disclosure-item"><span class="status-dot done"></span><div><b>Tu curso</b><p>Actividades, entregas, solicitudes y seguimiento.</p></div></div>
             <div class="disclosure-item"><span class="status-dot simulated"></span><div><b>Asistente</b><p data-ia-mode>Asistente por reglas locales</p></div></div>
             <div class="disclosure-item"><span class="status-dot future"></span><div><b>Estado de IA</b><p data-ia-mode>Asistente por reglas locales</p></div></div>
           </div>
         </section>
 
+        <section id="comunidad" class="page">
+          <div class="page-heading"><span class="eyebrow">CAMPUS</span><h1>Comunidad</h1>
+          <p>Conversaciones académicas y revisión de reportes.</p></div>
+          <p id="comunidad-estado" role="status"></p><div id="comunidad-contenido" class="stack"></div>
+        </section>
         <section id="docentes" data-only="profesor" class="page">
-          <div class="page-heading"><span class="eyebrow">PANEL DOCENTE</span><h1>Prepara tu próxima clase.</h1><p>De una intención a una actividad publicada, con decisiones humanas en cada paso. Los borradores pueden corregirse antes de aprobar.</p></div>
-          <div class="twocol asym"><article class="panel"><div class="panel-heading"><div><h3>Nuevo plan de clase</h3><p>Motor de plantillas · <span data-ia-mode>Asistente por reglas locales</span></p></div><span class="icon-chip">✦</span></div><form id="form-plan" class="form"><label for="objetivo">¿Qué quieres enseñar?</label><textarea id="objetivo" name="objetivo" rows="4" maxlength="300" required placeholder="Ej.: Explicar cómo funcionan las colas enlazadas y practicar la atención de solicitudes..."></textarea><label for="tema">Tema</label><select id="tema" name="tema"></select><label for="fecha-plan">Fecha de la clase</label><input type="date" id="fecha-plan" name="fecha" required><button class="primary-btn" type="submit">Generar borrador <span>✧</span></button><p class="micro">Grace preparará una plantilla que debe ser revisada y aprobada por el docente.</p></form></article>
-          <article class="panel"><div class="panel-heading"><div><h3>Clase de hoy</h3><p>Asistencia completa en un solo guardado</p></div><span class="icon-chip" aria-hidden="true">⌕</span></div>
+          <div class="page-heading"><span class="eyebrow">ESPACIO DOCENTE</span><h1>Planes y asistencia</h1><p>Consulta los planes de clase y el registro de asistencia por fecha.</p></div>
+          <details class="panel docencia-secundaria"><summary>Planes de clase</summary>
+          <div class="panel-heading"><div><h3>Nuevo plan de clase</h3><p><span data-ia-mode>Asistente por reglas locales</span></p></div><span class="icon-chip">✦</span></div><form id="form-plan" class="form"><label for="objetivo">¿Qué quieres enseñar?</label><textarea id="objetivo" name="objetivo" rows="4" maxlength="300" required placeholder="Ej.: Explicar cómo funcionan las colas enlazadas y practicar la atención de solicitudes..."></textarea><label for="tema">Tema</label><select id="tema" name="tema"></select><label for="fecha-plan">Fecha de la clase</label><input type="date" id="fecha-plan" name="fecha" required><button class="primary-btn" type="submit">Generar borrador <span>✧</span></button><p class="micro">Revisa el plan antes de aprobarlo y publicarlo.</p></form>
+          <div class="section-heading"><h2 id="flujo-planes" tabindex="-1">Planes en seguimiento</h2><span>Borrador → revisión → aprobación → publicación</span></div><div id="planes" class="plan-list"></div></details>
+          <details class="panel docencia-secundaria"><summary>Registro de asistencia por fecha</summary><div class="panel-heading"><div><h3>Asistencia por fecha</h3><p>Para registrar asistencia de una sesión, abre su aula.</p></div></div>
           <form id="form-clase" class="form"><label for="fecha-clase">Fecha de la clase</label><input type="date" id="fecha-clase" required>
           <div id="actividad-clase" class="helper-note" aria-live="polite"></div>
           <div id="lista-clase" class="attendance-list"></div>
           <p id="resumen-clase" class="helper-note" aria-live="polite"></p>
-          <button class="outline-btn" type="submit">Guardar asistencia de toda la clase</button></form></article></div>
-          <div class="section-heading"><h2 id="flujo-planes" tabindex="-1">Planes en seguimiento</h2><span>Borrador → revisión → aprobación → publicación</span></div><div id="planes" class="plan-list"></div>
+          <p id="confirmacion-asistencia" class="helper-note" aria-live="polite"></p>
+          <button class="outline-btn" type="submit">Guardar asistencia</button></form></details>
         </section>
 
         <section id="cursos" class="page">
@@ -115,19 +148,23 @@
           <article class="panel course-card-real"><div class="panel-heading"><div><span class="eyebrow">CURSO</span><h3>Programación Estructurada</h3><p>Grupo 6 · Progreso calculado con entregas y actividades</p></div><span class="course-badge">Curso activo</span></div><div class="progress-line"><span id="courses-progress"></span></div><div class="progress-meta"><strong id="courses-progress-label">Calculando…</strong><span id="courses-progress-detail">Entregas / actividades</span></div><button class="primary-btn" type="button" data-go="curso">Abrir curso →</button></article>
         </section>
 
-        <section id="mis-clases" data-only="estudiante" class="page">
-          <div class="page-heading"><span class="eyebrow">CURSOS IDENTIFICADOS POR ORIGEN</span><h1>Mis clases</h1>
-          <p>Programación Estructurada es el curso del prototipo local. Los demás son únicamente demostraciones: no reflejan matrícula ni sílabos oficiales.</p><button class="outline-btn" type="button" data-go="horario">Ver horario semanal de muestra →</button></div>
-          <div id="catalogo-cursos" class="catalogo-grid"></div>
+        <section id="mis-clases" class="page">
+          <div class="page-heading"><span class="eyebrow">GESTIÓN ACADÉMICA</span><h1>Mis clases</h1>
+          <p>Elige un curso para ver sus sesiones y materiales.</p></div>
+          <div id="cursos-reales" aria-live="polite"></div>
+          <div id="catalogo-cursos" class="catalogo-grid" hidden></div>
         </section>
-        <section id="horario" data-only="estudiante" class="page">
-          <div class="page-heading"><span class="eyebrow">HORARIO DE DEMOSTRACIÓN</span><h1>Mi semana</h1>
-          <p>Clases ficticias que se repiten de lunes a viernes. No se modelan feriados ni semanas especiales. No hay horario verificado del curso del prototipo.</p></div>
+        <section id="horario" class="page">
+          <div class="page-heading"><span class="eyebrow">HORARIOS</span><h1>Mi semana</h1>
+          <p>Consulta las horas y aulas registradas para tus cursos.</p></div>
+          <section class="panel" aria-labelledby="horario-real-titulo"><h2 id="horario-real-titulo">Horario de tus cursos</h2><div id="horario-real"></div></section>
+          <div hidden>
           <div class="horario-tabs" role="tablist" aria-label="Información académica">
-            <button id="tab-semana" class="horario-tab" role="tab" aria-selected="true" aria-controls="panel-semana" tabindex="0">Horario semanal</button>
+            <button id="tab-semana" class="horario-tab" role="tab" aria-selected="true" aria-controls="panel-semana" tabindex="0">Demostración semanal</button>
             <button id="tab-actividades" class="horario-tab" role="tab" aria-selected="false" aria-controls="panel-actividades" tabindex="-1">Actividades</button>
           </div>
           <div id="panel-semana" role="tabpanel" aria-labelledby="tab-semana">
+            <h2>Horario ficticio de demostración</h2><p class="nota-demo">No representa cursos matriculados ni aulas reservadas.</p>
             <div class="semana-controles"><button id="semana-anterior" class="outline-btn" type="button">← Anterior</button>
             <strong id="semana-periodo" aria-live="polite"></strong>
             <button id="semana-hoy" class="outline-btn" type="button">Volver a hoy</button>
@@ -138,11 +175,16 @@
             <h2>Actividades de Programación Estructurada</h2><p class="nota-demo">Solo datos del curso del prototipo local. Los cursos de demostración no tienen tareas publicadas.</p>
             <div id="horario-actividades" class="stack"></div>
           </div>
+          </div>
         </section>
-        <section id="ficha-curso" data-only="estudiante" class="page">
+        <section id="ficha-curso" class="page">
           <div class="page-heading"><span class="eyebrow">FICHA DE SOLO LECTURA</span><h1 id="ficha-titulo" tabindex="-1">Información de la asignatura</h1></div>
           <article class="panel" id="ficha-contenido"></article>
           <button type="button" id="volver-ficha" class="outline-btn">← Volver</button>
+        </section>
+        <section id="sesion" class="page" aria-labelledby="sesion-titulo">
+          <div class="page-heading"><button type="button" class="text-btn" data-go="curso">← Sesiones del curso</button><p>Programación Estructurada</p><h1 id="sesion-titulo" tabindex="-1">Sesión de clase</h1><p id="sesion-fecha"></p></div>
+          <div class="session-layout"><div id="sesion-contenido"></div><aside class="panel session-agenda" aria-label="Agenda de la sesión"><h2>Agenda de la clase</h2><nav id="sesion-agenda"></nav><button type="button" class="outline-btn" id="explicar-sesion">Explícame este tema</button></aside></div>
         </section>
         <section id="curso" class="page">
           <div class="page-heading"><span class="eyebrow">DETALLE DEL CURSO</span><h1>Programación Estructurada.</h1><p>Actividades, asistencia y calendario de tu curso.</p></div>
@@ -155,7 +197,7 @@
 
         <section id="calendario" class="page"><div class="page-heading"><span class="eyebrow">CALENDARIO</span><h1>Próximas actividades.</h1><p>Fechas reales de Programación Estructurada, ordenadas cronológicamente.</p></div><article class="panel"><div id="calendario-list" class="stack"></div></article></section>
 
-        <section id="asistencia" class="page"><div class="page-heading"><span class="eyebrow">ASISTENCIA</span><h1>Tu historial de asistencia.</h1><p>El estudiante ve sus propios registros; el docente registra la clase de hoy en su espacio.</p></div><article class="panel"><div id="asistencia-page-list" class="compact-list"></div></article></section>
+        <section id="asistencia" data-only="estudiante" class="page"><div class="page-heading"><span class="eyebrow">ASISTENCIA</span><h1>Tu historial de asistencia.</h1><p>Registros de asistencia del estudiante de demostración seleccionado.</p></div><article class="panel"><div id="asistencia-page-list" class="compact-list"></div></article></section>
 
         <section id="estructuras" class="page">
           <div class="page-heading"><span class="eyebrow">ATENCIÓN A ESTUDIANTES</span><h1>Solicitudes de ayuda.</h1><p>Revisa las preguntas pendientes y atiéndelas por orden de llegada.</p></div>
@@ -174,6 +216,6 @@
       </div>
     </main>
   </div>
-  <button id="grace-launcher" class="grace-launcher" type="button" aria-controls="assistant-dock" aria-expanded="false">✦ Hablar con Grace</button>
+  <button id="grace-launcher" class="grace-launcher" type="button" aria-label="Hablar con Grace" aria-controls="assistant-dock" aria-expanded="false"><span aria-hidden="true">✦</span><span class="launcher-label">Hablar con Grace</span></button>
 </body>
 </html>

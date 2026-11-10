@@ -24,9 +24,15 @@ def main():
                 messagebox.showinfo('Grace', str(error))
         ventana.destroy()
         return
-    if salud():
+    servidor = salud()
+    if servidor:
         ventana.withdraw()
-        webbrowser.open(URL)
+        if servidor.get('publicacion_conjunta'):
+            webbrowser.open(URL)
+        else:
+            messagebox.showwarning('Grace necesita reiniciarse',
+                                   'Usa Detener Grace y luego vuelve a usar Abrir Grace. '
+                                   'El servidor actual todavía usa una versión anterior.')
         ventana.destroy()
         return
     panel = ttk.Frame(ventana, padding=24)

@@ -10,7 +10,7 @@ let rolActual = sessionStorage.getItem('grace-rol') || '';
 let asistenteActivado = true;
 let modoIA = 'reglas';
 let secuenciaConsulta = 0;
-const sinMovimiento = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sinMovimiento = () => document.body.classList.contains('movimiento-apagado') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const $ = id => document.getElementById(id);
 const escapar = dato => String(dato ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,6 +18,10 @@ const formatFecha = fecha => { const p = String(fecha || '').split('-'); return 
 let semanaVisible = null;
 let cursoSeleccionado = 'principal';
 let origenFicha = 'mis-clases';
+let temaContexto = '';
+let sesionActual = null;
+let pestanaCurso = 'sesiones';
+let filtroSesiones = 'todas';
 function cursosMostrados() {
   return [{id:'principal',nombre:'Programación Estructurada',descripcion:'Curso del prototipo local. Sus actividades provienen de los datos ficticios del servidor.',temas:['Actividades publicadas en la demostración'],color:'azul',demostracion:false,horarios:HORARIO_CURSO_PRINCIPAL}, ...CATALOGO_DEMOSTRACION];
 }
@@ -25,7 +29,7 @@ function etiquetaDemo() {return '<span class="etiqueta-demo">Demostración · no
 function cursoPorId(id) {return cursosMostrados().find(c=>c.id===id);}
 function abrirFicha(id, origen='mis-clases') {
   const c=cursoPorId(id);
-  if(!c || rolActual!=='estudiante') return;
+  if(!c || !rolActual) return;
   cursoSeleccionado=id;
   origenFicha=origen;
   $('ficha-titulo').textContent=c.nombre;
@@ -34,13 +38,13 @@ function abrirFicha(id, origen='mis-clases') {
     <h2>Temas de ejemplo</h2><p class="nota-demo">No son un sílabo oficial ni contenidos garantizados por una universidad.</p>
     <ul>${c.temas.map(t=>`<li>${escapar(t)}</li>`).join('')}</ul>
     <h2>Horario ilustrativo</h2>${horario?`<ul>${horario}</ul>`:'<p>No hay horario semanal verificado para este curso del prototipo.</p>'}
-    <p class="nota-demo">Ficha informativa de solo lectura: navegar no registra matrícula ni modifica datos.</p>`;
+    ${id==='principal'?'<div class="plan-actions"><button type="button" class="primary-btn" data-curso-vista="sesiones">Entrar a las sesiones →</button><button type="button" class="outline-btn" data-curso-vista="actividades">Ver actividades</button></div>':'<h2>Actividades y recursos</h2><p>Todavía no hay material publicado para esta asignatura.</p>'}`;
   navegar('ficha-curso','ficha-titulo');
 }
 function renderizarCatalogo() {
   $('catalogo-cursos').innerHTML=cursosMostrados().map(c=>`<article class="curso-tarjeta curso-${escapar(c.color)}">
     <div class="curso-linea">${c.demostracion?etiquetaDemo():'<span class="etiqueta-demo">Prototipo local · no oficial</span>'}<span>${c.id==='principal'?'Curso del prototipo':'Curso de muestra'}</span></div>
-    <h2>${escapar(c.nombre)}</h2><p>${escapar(c.descripcion)}</p>
+    <h2>${escapar(c.nombre)}</h2><p>${escapar(c.descripcion)}</p>${c.id==='principal'&&estado?`<p>${estado.actividades.filter(a=>a.entregada).length} de ${estado.actividades.length} actividades entregadas</p><button type="button" class="primary-btn" data-curso-vista="sesiones">Entrar al curso →</button>`:''}
     <a href="#ficha-curso" data-curso="${escapar(c.id)}" data-origen="mis-clases">Ver ficha del curso →</a></article>`).join('');
 }
 function bloquesHorario() {
@@ -61,10 +65,11 @@ function renderizarHorario() {
   <tbody>${horas.map(hora=>`<tr><th scope="row">${hora}</th>${fechas.map((_,dia)=>`<td>${bloques.filter(b=>b.dia===dia && b.inicio===hora).map(enlaceBloque).join('')||'<span class="sin-clase">Sin clase de muestra</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   $('horario-movil').innerHTML=fechas.map((f,dia)=>`<section class="dia-horario"><h3>${DIAS_SEMANA_ES[dia]} · ${f.toLocaleDateString('es-NI',{day:'numeric',month:'long'})}</h3>
     <div class="bloques-dia">${bloques.filter(b=>b.dia===dia).sort((a,b)=>a.inicio.localeCompare(b.inicio)).map(enlaceBloque).join('')||'<p>Sin clases de muestra.</p>'}</div></section>`).join('');
+  if (typeof renderizarHorarioReal === 'function') renderizarHorarioReal();
 }
 function renderizarActividadesHorario() {
   const a=estado.actividades;
-  $('horario-actividades').innerHTML=a.length?a.slice().sort((x,y)=>x.fecha.localeCompare(y.fecha)).map(a=>`<article class="activity-row"><div class="activity-main"><strong>${escapar(a.titulo)}</strong><p>Programación Estructurada · ${escapar(formatFecha(a.fecha))} · Curso del prototipo</p></div></article>`).join(''):cajaVacia('Programación Estructurada: sin actividades publicadas. Los cursos de muestra no incluyen tareas.');
+  $('horario-actividades').innerHTML=a.length?a.slice().sort((x,y)=>x.fecha.localeCompare(y.fecha)).map(a=>`<article class="activity-row"><div class="activity-main"><strong>${escapar(a.titulo)}</strong><p>Programación Estructurada · ${escapar(formatFecha(a.fecha))}</p></div><button type="button" class="mini-btn" data-sesion="${escapar(a.id)}">Abrir sesión</button></article>`).join(''):cajaVacia('Programación Estructurada: sin actividades publicadas. Los cursos de muestra no incluyen tareas.');
   if ($('preview-estudiante')) $('preview-estudiante').innerHTML=a.length?a.slice().sort((x,y)=>x.fecha.localeCompare(y.fecha)).slice(0,3).map(a=>`<div class="activity-row"><strong>${escapar(a.titulo)}</strong><span>${escapar(formatFecha(a.fecha))}</span></div>`).join(''):cajaVacia('Todavía no hay actividades publicadas.');
 }
 function seleccionarTab(tab, enfocar=false) {
@@ -103,6 +108,7 @@ async function api(ruta, datos) {
   const respuesta = await fetch(ruta, opciones);
   let cuerpo;
   try { cuerpo = await respuesta.json(); } catch { throw new Error('La respuesta del servidor no es válida.'); }
+  if (respuesta.status === 401 && typeof sesionCaducada === 'function') sesionCaducada();
   if (!respuesta.ok) throw new Error(cuerpo.error || `Error ${respuesta.status}`);
   return cuerpo.resultado ?? cuerpo;
 }
@@ -132,18 +138,28 @@ function cambiarCarga(activa) {
   document.querySelector('.page.active')?.setAttribute('aria-busy', String(cargasPendientes > 0));
 }
 
-function navegar(pagina, destino = '') {
+function navegar(pagina, destino = '', alEntrar) {
+  if (typeof cuentaActual !== 'undefined' && cuentaActual?.rol === 'coordinador' &&
+      !['inicio','cuentas','perfil','cursos','mis-clases','calendario','horario','seguimiento','comunidad'].includes(pagina)) pagina = 'cuentas';
+  pagina = pagina === 'cursos' ? 'mis-clases' : pagina === 'calendario' ? 'horario' : pagina;
+  if (pagina === 'comunidad' && !['estudiante','coordinador'].includes(rolActual)) pagina = 'inicio';
   if ((pagina === 'estructuras' || pagina === 'docentes') && rolActual !== 'profesor') pagina = 'inicio';
-  if (['cursos','curso','calendario','asistencia','mis-clases','horario','ficha-curso'].includes(pagina) && rolActual !== 'estudiante') return;
+  if (pagina === 'asistencia' && rolActual !== 'estudiante') pagina = 'docentes';
   const nueva = document.getElementById(pagina);
   if (!nueva || !nueva.classList.contains('page')) return;
   clearTimeout(temporizadorVista);
   document.querySelectorAll('.page.leaving').forEach(e => e.classList.remove('leaving'));
   const anterior = document.querySelector('.page.active');
   const cambiar = () => {
+    document.body.classList.toggle('vista-asistente', pagina === 'asistente');
+    if (pagina === 'asistente') mostrarChatFlotante(false);
+    if (pagina === 'curso') seleccionarPestanaCurso(pestanaCurso);
+    if (pagina === 'inicio' && typeof renderizarInicioAcademico === 'function') renderizarInicioAcademico();
+    const destinoMenu = ['mis-clases','curso','ficha-curso','sesion','aula-grace'].includes(pagina) ? 'cursos' : pagina === 'horario' ? 'calendario' : pagina;
     document.querySelectorAll('.page').forEach(e => e.classList.toggle('active', e.id === pagina));
+    if (pagina === 'comunidad') cargarComunidad();
     document.querySelectorAll('[data-page]').forEach(e => {
-      const activa = e.dataset.page === pagina;
+      const activa = e.dataset.page === destinoMenu;
       e.classList.toggle('active', activa);
       if (activa) e.setAttribute('aria-current','page');
       else e.removeAttribute('aria-current');
@@ -151,12 +167,17 @@ function navegar(pagina, destino = '') {
     if (destino) {
       const objetivo = document.getElementById(destino);
       if (objetivo && objetivo.closest('.page')?.id === pagina) {
-        objetivo.scrollIntoView({block:'start', behavior:'auto'});
+        const plegable = objetivo.closest('details');
+        if (plegable) plegable.open = true;
+        if (destino === 'sesion-titulo' || destino === 'aula-titulo') window.scrollTo({top:0,behavior:'auto'});
+        else objetivo.scrollIntoView({block:'start', behavior:'auto'});
         objetivo.focus({preventScroll:true});
+        alEntrar?.();
         return;
       }
     }
     window.scrollTo({top:0,behavior:'auto'});
+    alEntrar?.();
   };
   if (anterior && anterior !== nueva && !sinMovimiento()) {
     anterior.classList.remove('active');
@@ -207,7 +228,8 @@ function renderizar() {
   renderizarAsistenciaEstudiante();
   renderizarCalendarios();
   const temasAsistente = estado.grafo?.temas || ['Listas'];
-  ['chat-topic','assistant-topic'].forEach(id => { if ($(id)) llenarSelect($(id), temasAsistente.map(t=>({valor:t,nombre:t})), temasAsistente.includes('Listas') ? 'Listas' : temasAsistente[0]); });
+  ['chat-topic','assistant-topic'].forEach(id => { if ($(id)) llenarSelect($(id), temasAsistente.map(t=>({valor:t,nombre:t})), temasAsistente.includes($(id).value) ? $(id).value : temasAsistente.includes('Listas') ? 'Listas' : temasAsistente[0]); });
+  fijarTema(temaContexto);
   const resumen = estado.resumen_asistencia.por_estudiante[estudianteActual];
   if ($('dashboard-attendance')) $('dashboard-attendance').innerHTML = `<strong>${escapar(porcentaje(resumen.porcentaje))}</strong><span>${escapar(resumen.presentes)} presencias de ${escapar(resumen.registrados)} registros</span>`;
   $('cola').innerHTML = estado.solicitudes.map((s,i)=>`<div class="request-row"><span class="num">${i+1}</span><div class="activity-main"><h4>${escapar(nombres(s.estudiante_id))}</h4><p>${escapar(s.mensaje)}</p></div></div>`).join('') || cajaVacia('Cola vacía. Las nuevas solicitudes aparecerán aquí.');
@@ -218,6 +240,8 @@ function renderizar() {
   renderizarCatalogo();
   renderizarHorario();
   renderizarActividadesHorario();
+  renderizarSesiones();
+  if (sesionActual !== null) renderizarSesion(sesionActual);
 }
 
 
@@ -245,15 +269,19 @@ function renderizarCalendarios() {
 }
 
 function seleccionarPestanaCurso(nombre) {
+  pestanaCurso = nombre;
   const actividades = document.querySelector('#curso .twocol');
   const asistencia = document.querySelector('#curso .attendance-student');
   const calendario = document.querySelector('#curso .course-calendar');
   if (actividades) actividades.hidden = nombre !== 'actividades';
   if (asistencia) asistencia.hidden = nombre !== 'asistencia';
   if (calendario) calendario.hidden = nombre !== 'calendario';
+  const sesiones = document.querySelector('#curso .course-sessions');
+  if (sesiones) sesiones.hidden = nombre !== 'sesiones';
   document.querySelectorAll('[data-course-tab]').forEach(b => {
     const activo = b.dataset.courseTab === nombre;
     b.setAttribute('aria-selected', String(activo));
+    b.tabIndex = activo ? 0 : -1;
     b.classList.toggle('active', activo);
   });
 }
@@ -271,13 +299,14 @@ function renderizarClase() {
     : 'No hay actividad publicada para esta fecha.';
   $('lista-clase').innerHTML = estado.estudiantes.map(e => {
     const registro = registros.find(r => r.estudiante_id === e.id);
-    const presente = registro ? registro.presente : true;
+    const presente = registro ? registro.presente : false;
     const resumen = estado.resumen_asistencia.por_estudiante[e.id];
-    return `<label class="attendance-row"><span><strong>${escapar(e.nombre)}</strong><small>Asistencia acumulada: ${escapar(porcentaje(resumen.porcentaje))} (${resumen.presentes}/${resumen.registrados})</small></span><span class="attendance-control"><input type="checkbox" role="switch" data-clase-estudiante="${escapar(e.id)}" ${presente?'checked':''}><span class="attendance-state">${presente?'Presente':'Ausente'}</span></span></label>`;
+    return `<label class="attendance-row"><span><strong>${escapar(e.nombre)}</strong><small>Asistencia acumulada: ${escapar(porcentaje(resumen.porcentaje))} (${resumen.presentes}/${resumen.registrados})</small></span><select data-clase-estudiante="${escapar(e.id)}" aria-label="Asistencia de ${escapar(e.nombre)}"><option value="" ${!registro?'selected':''}>Sin registrar</option><option value="true" ${registro&&presente?'selected':''}>Presente</option><option value="false" ${registro&&!presente?'selected':''}>Ausente</option></select></label>`;
   }).join('');
   const presentes = registros.filter(r => r.presente).length;
   const ratio = registros.length ? `${Math.round(presentes * 1000 / registros.length) / 10}%` : 'Sin registros';
   $('resumen-clase').textContent = `En esta fecha: ${ratio} (${presentes}/${registros.length} registros). Acumulado de la clase: ${porcentaje(estado.resumen_asistencia.clase.porcentaje)}. Los días sin registro no cuentan como ausencias.`;
+  resumenAntesDeGuardar();
 }
 
 function renderizarAsistenciaEstudiante() {
@@ -333,13 +362,13 @@ async function ejecutar(accion, exito) {
   catch (e) { avisar(e.message, true); return false; }
 }
 
-async function enviarChat(mensaje, destino='chat') {
+async function enviarChat(mensaje, destino='chat', contexto={}) {
   mensaje = mensaje.trim();
   if (!mensaje) return;
   const chat = $(destino);
   agregarMensajeChat(`<div class="bubble me">${escapar(mensaje)}</div>`);
   if (!asistenteActivado) {
-    if (chat) chat.insertAdjacentHTML('beforeend','<div class="bubble ai">El asistente está desactivado. No se envió nada al servidor.</div>');
+    if (chat) agregarMensajeChat('<div class="bubble ai">El asistente está desactivado. No se envió nada al servidor.</div>');
     return;
   }
   if (!chat) return;
@@ -349,12 +378,16 @@ async function enviarChat(mensaje, destino='chat') {
   if (estadoAsistente) estadoAsistente.textContent = 'Consultando…';
   chat.scrollTop=chat.scrollHeight;
   try {
-    const r = await api('/api/conversar',{mensaje,rol:rolActual === 'profesor' ? 'docente' : 'estudiante',estudiante_id:estudianteActual});
+    const cursoAula = document.querySelector?.('#aula-grace.active')?.dataset.cursoId;
+    const datos = {mensaje,rol:rolActual === 'profesor' ? 'docente' : 'estudiante',estudiante_id:estudianteActual};
+    if (cursoAula) datos.curso_id = cursoAula;
+    const r = await api('/api/conversar',{...datos,...contexto});
     const fuente = r.origen || 'reglas';
     const estadoReal = fuente === 'IA' ? 'IA conectada; respaldo de reglas disponible' :
       fuente === 'reglas (respaldo)' ? 'IA no disponible; respuesta por reglas de respaldo' : 'Asistente por reglas locales';
     document.querySelectorAll?.('[data-ia-mode]')?.forEach(e => { e.textContent = estadoReal; });
-    agregarMensajeChat(`<div class="bubble ai">${escapar(r.respuesta)}<small class="response-source">Fuente: ${fuente}</small></div>`);
+    const respuesta = escapar(r.respuesta).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    agregarMensajeChat(`<div class="bubble ai">${respuesta}<small class="response-source">Fuente: ${fuente}</small></div>`);
     if (r.aviso) agregarMensajeChat(`<div class="helper-note" role="status">${escapar(r.aviso)}${r.estado_http ? ' (HTTP ' + Number(r.estado_http) + ')' : ''}</div>`);
     if (estadoAsistente) estadoAsistente.textContent = 'Respuesta lista';
   } catch (e) {
@@ -378,7 +411,8 @@ function agregarMensajeChat(html) {
 function preguntaRapida(boton) {
   let mensaje = boton.dataset.question;
   if (mensaje === 'Explícame este tema') {
-    const selector = boton.closest('.assistant-dock')?.querySelector('select') || $('chat-topic');
+    const elegido = boton.closest('.assistant-dock')?.querySelector('select') || $('chat-topic');
+    const selector = {value: temaContexto || elegido?.value};
     mensaje = `Explícame ${selector?.value || 'Listas'}`;
   }
   enviarChat(mensaje, boton.closest('.assistant-dock') ? 'assistant-messages' : 'chat');
@@ -415,13 +449,16 @@ function eventos() {
   $('fecha-clase').addEventListener('change',renderizarClase);
   $('lista-clase').addEventListener('change',e=>{
     if (!e.target.matches('[data-clase-estudiante]')) return;
-    e.target.closest('.attendance-control').querySelector('.attendance-state').textContent = e.target.checked ? 'Presente' : 'Ausente';
+    resumenAntesDeGuardar();
   });
   $('form-clase').addEventListener('submit',e=>{
     e.preventDefault();
     const registros=[...document.querySelectorAll('[data-clase-estudiante]')].map(c=>({
-      estudiante_id:c.dataset.claseEstudiante, presente:c.checked,
+      estudiante_id:c.dataset.claseEstudiante, presente:c.value === 'true',
     }));
+    const resumen = resumenAntesDeGuardar();
+    if (resumen.sinRegistrar) { avisar('Selecciona Presente o Ausente para cada estudiante antes de guardar.',true); return; }
+    if (!confirm(`Guardar asistencia del ${formatFecha($('fecha-clase').value)}: ${resumen.presentes} presentes y ${resumen.ausentes} ausentes. ¿Confirmas?`)) return;
     ejecutar(()=>api('/api/asistencia/lote',{fecha:$('fecha-clase').value,registros}),
       'Asistencia de toda la clase guardada.');
   });
@@ -447,9 +484,7 @@ function eventos() {
     if (b.tagName !== 'A') seleccionarRol(b.dataset.role);
   }));
   $('assistant-toggle')?.addEventListener('change', e=>{
-    asistenteActivado = e.target.checked;
-    $('assistant-state').textContent = asistenteActivado ? 'Activado' : 'Desactivado';
-    $('assistant-disabled-note').hidden = asistenteActivado;
+    cambiarAsistente(e.target.checked);
   });
   $('assistant-collapse')?.addEventListener('click',()=>{
     mostrarChatFlotante(false);
@@ -485,13 +520,14 @@ function aplicarRol() {
   const esProfesor = rolActual === 'profesor';
   document.body.classList.toggle('role-profesor', esProfesor);
   document.body.classList.toggle('role-estudiante', !esProfesor);
-  $('role-gate')?.classList.toggle('hidden', Boolean(rolActual));
+  $('role-gate')?.classList.toggle('hidden', Boolean(rolActual) && (typeof cuentaActual === 'undefined' || Boolean(cuentaActual)));
   if ($('role-label')) $('role-label').textContent = esProfesor ? 'Espacio docente' : 'Área personal';
   if ($('user-label')) $('user-label').textContent = esProfesor ? 'Profesor' : 'Estudiante';
   document.querySelectorAll('.student-nav').forEach(e=>e.hidden=esProfesor);
   document.querySelectorAll('.teacher-nav').forEach(e=>e.hidden=!esProfesor);
-  if (esProfesor) navegar('docentes');
+  if (esProfesor) navegar('mis-clases');
   else navegar('inicio');
+  if (typeof aplicarCuenta === 'function') aplicarCuenta();
 }
 
 function seleccionarRol(rol) {
@@ -501,6 +537,7 @@ function seleccionarRol(rol) {
 }
 
 async function iniciar() {
+  prepararInterfaz();
   if(location.pathname === '/estudiante' || location.pathname === '/profesor') {
     rolActual = location.pathname.slice(1);
     sessionStorage.setItem('grace-rol', rolActual);
@@ -518,11 +555,168 @@ async function iniciar() {
     modoIA = salud.modo || 'reglas';
     const textoModo = modoIA === 'api' ? 'IA configurada; conexión pendiente de comprobar' : 'Asistente por reglas locales';
     document.querySelectorAll('[data-ia-mode]').forEach(e => { e.textContent = textoModo; });
+    if (!salud.autenticacion && $('form-acceso')) {
+      document.body.classList.add('cuentas-activa');
+      $('role-gate').classList.remove('hidden');
+      document.querySelector('#role-gate .role-options').hidden=true;
+      document.querySelector('.role-disclaimer').textContent='Actualización instalada: cierra Grace y vuelve a abrirla con tu acceso habitual para activar las cuentas.';
+      return;
+    }
+    if (salud.autenticacion && typeof iniciarCuentas === 'function') {
+      await iniciarCuentas();
+      eventos();
+      return;
+    }
     await cargar();
     const estudiantes=estado.estudiantes.map(e=>({valor:e.id,nombre:e.nombre}));
     llenarSelect($('estudiante-actual'),estudiantes,estudianteActual);
-    seleccionarPestanaCurso('actividades');
+    seleccionarPestanaCurso('sesiones');
   } catch (e) {avisar(`No se pudo conectar con Python: ${e.message}. Inicia el servidor con python app.py`,true);}
   eventos();
 }
 document.addEventListener('DOMContentLoaded',iniciar);
+
+function resumenAntesDeGuardar() {
+  const controles = [...document.querySelectorAll('[data-clase-estudiante]')];
+  const presentes = controles.filter(c=>c.value === 'true').length;
+  const ausentes = controles.filter(c=>c.value === 'false').length;
+  const sinRegistrar = controles.length - presentes - ausentes;
+  if ($('confirmacion-asistencia')) $('confirmacion-asistencia').textContent = `${presentes} presentes · ${ausentes} ausentes · ${sinRegistrar} sin registrar`;
+  return {presentes, ausentes, sinRegistrar};
+}
+
+function estadoSesion(fecha, hoy=fechaLocal(new Date())) {
+  return fecha === hoy ? 'Hoy' : fecha < hoy ? 'Anterior' : 'Próxima';
+}
+
+function sesionesFiltradas(filtro, hoy=fechaLocal(new Date())) {
+  return [...estado.actividades].filter(a=>filtro==='pendientes' ? !a.entregada : filtro==='anteriores' ? a.fecha<hoy : filtro==='proximas' ? a.fecha>=hoy : true)
+    .sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.id-b.id);
+}
+
+function renderizarSesiones() {
+  if (!$('lista-sesiones')) return;
+  $('lista-sesiones').innerHTML = sesionesFiltradas(filtroSesiones).map(a=>`<article class="panel session-link"><div><span class="tag">${escapar(estadoSesion(a.fecha))}</span><h3>${escapar(a.titulo)}</h3><p>${escapar(formatFecha(a.fecha))} · ${escapar(a.tema)}</p><span>${a.entregada?'Actividad entregada':'Actividad pendiente'}</span></div><button type="button" class="primary-btn" data-sesion="${Number(a.id)}">Entrar a la sesión →</button></article>`).join('') || cajaVacia('No hay sesiones en este filtro.');
+  document.querySelectorAll('[data-filtro-sesion]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filtroSesion===filtroSesiones)));
+}
+
+function datosSesion(id) {
+  const actividad = estado.actividades.find(a=>a.id===Number(id));
+  if (!actividad) return null;
+  const plan = estado.planes.find(p=>p.estado==='publicado' && p.actividad_id===actividad.id);
+  return {actividad, plan};
+}
+
+function abrirSesion(id) {
+  if (!datosSesion(id)) { avisar('La actividad ya no está disponible.',true); return; }
+  sesionActual = Number(id);
+  pestanaCurso = 'sesiones';
+  renderizarSesion(sesionActual);
+  navegar('sesion','sesion-titulo');
+}
+
+function renderizarSesion(id) {
+  const datos = datosSesion(id);
+  if (!datos) return;
+  const {actividad:a,plan:p} = datos;
+  $('sesion-titulo').textContent = a.titulo;
+  $('sesion-fecha').textContent = `${formatFecha(a.fecha)} · ${a.tema} · ${estadoSesion(a.fecha)}`;
+  const bloque = (id,titulo,contenido)=>`<section class="panel session-block" id="sesion-${id}"><h2>${titulo}</h2><p class="session-text">${escapar(contenido)}</p></section>`;
+  const partes = [];
+  if (p) partes.push(['apertura','Antes de clase',p.contenido.apertura]);
+  partes.push(['desarrollo','Durante la clase',p?.contenido.desarrollo || a.descripcion]);
+  const actividad = `<section class="panel session-block" id="sesion-actividad"><span class="eyebrow">ACTIVIDAD</span><h2>${escapar(a.titulo)}</h2><p class="session-text">${escapar(p?.contenido.practica || a.descripcion)}</p><p>${a.entregada?'Entrega registrada para este estudiante.':'Esta actividad está pendiente.'}</p>${rolActual==='estudiante'&&!a.entregada?`<button type="button" class="primary-btn" data-entregar="${Number(a.id)}">Registrar entrega</button><p class="micro">Se registra la entrega; esta versión todavía no adjunta archivos.</p>`:''}</section>`;
+  if (p) partes.push(['cierre','Después de clase',p.contenido.evaluacion]);
+  $('sesion-contenido').innerHTML = partes.filter(([id])=>id!=='cierre').map(x=>bloque(...x)).join('') + actividad + partes.filter(([id])=>id==='cierre').map(x=>bloque(...x)).join('');
+  $('sesion-agenda').innerHTML = partes.filter(([id])=>id!=='cierre').map(([id,titulo])=>`<a href="#sesion-${id}">${titulo}</a>`).join('') + '<a href="#sesion-actividad">Actividad y entrega</a>' + (p?'<a href="#sesion-cierre">Después de clase</a>':'');
+  fijarTema(a.tema);
+  $('explicar-sesion').textContent = `Explícame ${a.tema}`;
+}
+
+function fijarTema(tema) {
+  temaContexto = tema || '';
+  ['chat-topic','assistant-topic'].forEach(id=>{
+    if (temaContexto && $(id) && [...$(id).options].some(o=>o.value===temaContexto)) $(id).value=temaContexto;
+  });
+  document.querySelectorAll('[data-question="Explícame este tema"]').forEach(b=>{b.textContent=temaContexto?`Explícame ${temaContexto}`:'Explícame este tema';});
+  document.querySelectorAll('.topic-context-bar').forEach(e=>{e.textContent=temaContexto?`Tema: ${temaContexto}`:'Consulta general · Programación Estructurada';});
+}
+
+function prepararInterfaz() {
+  prepararMenu();
+  prepararWidgets();
+  const interruptor = document.createElement('label');
+  interruptor.className='switch-row chat-switch';
+  interruptor.innerHTML='<span>Asistente: <strong id="chat-assistant-state">Activado</strong></span><input type="checkbox" id="chat-assistant-toggle" checked aria-label="Activar o desactivar el asistente">';
+  document.querySelector('#asistente .chat-top').append(interruptor);
+  $('chat-assistant-toggle').addEventListener('change',e=>cambiarAsistente(e.target.checked));
+  const tabs = document.querySelector('#curso .course-tabs');
+  const boton = document.createElement('button');
+  boton.type='button'; boton.setAttribute('role','tab'); boton.dataset.courseTab='sesiones'; boton.textContent='Sesiones';
+  tabs.prepend(boton);
+  const panel = document.createElement('div');
+  panel.className='course-sessions';
+  panel.innerHTML='<div class="session-filter" role="group" aria-label="Filtrar sesiones"><button class="outline-btn" type="button" data-filtro-sesion="todas" aria-pressed="true">Todas</button><button class="outline-btn" type="button" data-filtro-sesion="anteriores" aria-pressed="false">Anteriores</button><button class="outline-btn" type="button" data-filtro-sesion="proximas" aria-pressed="false">Próximas</button><button class="outline-btn" type="button" data-filtro-sesion="pendientes" aria-pressed="false">Con pendientes</button></div><div id="lista-sesiones" class="session-list"></div>';
+  tabs.after(panel);
+  const paneles = {sesiones:panel,actividades:document.querySelector('#curso .twocol'),asistencia:document.querySelector('#curso .attendance-student'),calendario:document.querySelector('#curso .course-calendar')};
+  tabs.querySelectorAll('[data-course-tab]').forEach(b=>{const id=b.dataset.courseTab;b.id='curso-tab-'+id;b.setAttribute('aria-controls','curso-panel-'+id);paneles[id].id='curso-panel-'+id;paneles[id].setAttribute('role','tabpanel');paneles[id].setAttribute('aria-labelledby',b.id);});
+  tabs.addEventListener('keydown',e=>{
+    if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+    e.preventDefault(); const botones=[...tabs.querySelectorAll('[data-course-tab]')], indice=botones.indexOf(document.activeElement);
+    const nuevo=e.key==='Home'?0:e.key==='End'?botones.length-1:(indice+(e.key==='ArrowRight'?1:-1)+botones.length)%botones.length;
+    seleccionarPestanaCurso(botones[nuevo].dataset.courseTab); botones[nuevo].focus();
+  });
+  ['chat-topic','assistant-topic'].forEach(id=>{
+    const etiqueta=$(id).closest('label'), detalles=document.createElement('details'), resumen=document.createElement('summary'), contexto=document.createElement('p');
+    detalles.className='topic-options'; resumen.textContent='Cambiar tema'; contexto.className='topic-context-bar';
+    etiqueta.before(contexto,detalles); detalles.append(resumen,etiqueta);
+    $(id).addEventListener('change',e=>fijarTema(e.target.value));
+  });
+  $('explicar-sesion').addEventListener('click',()=>{mostrarChatFlotante(true);enviarChat(`Explícame ${temaContexto || 'Listas'}`,'assistant-messages');});
+  document.addEventListener('click',e=>{
+    const abrir=e.target.closest('[data-sesion]'); if(abrir){abrirSesion(abrir.dataset.sesion);return;}
+    const vista=e.target.closest('[data-curso-vista]'); if(vista){pestanaCurso=vista.dataset.cursoVista;navegar('curso');return;}
+    const filtro=e.target.closest('[data-filtro-sesion]'); if(filtro){filtroSesiones=filtro.dataset.filtroSesion;renderizarSesiones();return;}
+    const entrega=e.target.closest('#sesion [data-entregar]');
+    if(entrega) ejecutar(()=>api('/api/entregas',{actividad_id:Number(entrega.dataset.entregar),estudiante_id:estudianteActual}),'Entrega registrada.');
+  });
+  fijarTema('');
+}
+
+function prepararMenu() {
+  const boton=$('menu-toggle');
+  document.querySelectorAll('.sidebar .nav-btn').forEach(e=>{
+    e.setAttribute('aria-label',e.textContent.trim());e.title=e.textContent.trim();
+    [...e.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim()).forEach(n=>{const texto=document.createElement('span');texto.className='nav-text';texto.textContent=n.textContent.trim();n.replaceWith(texto);});
+  });
+  function aplicar(valor){document.body.classList.toggle('menu-colapsado',valor);boton.setAttribute('aria-expanded',String(!valor));boton.setAttribute('aria-label',valor?'Ampliar menú':'Reducir menú');boton.querySelector('span').textContent=valor?'Ampliar menú':'Reducir menú';sessionStorage.setItem('grace-menu-colapsado',String(valor));}
+  aplicar(sessionStorage.getItem('grace-menu-colapsado')==='true');
+  boton.addEventListener('click',()=>aplicar(!document.body.classList.contains('menu-colapsado')));
+}
+
+function cambiarAsistente(activo) {
+  asistenteActivado=Boolean(activo);
+  ['assistant-toggle','chat-assistant-toggle'].forEach(id=>{if($(id))$(id).checked=asistenteActivado;});
+  ['assistant-state','chat-assistant-state'].forEach(id=>{if($(id))$(id).textContent=asistenteActivado?'Activado':'Desactivado';});
+  if($('assistant-disabled-note'))$('assistant-disabled-note').hidden=asistenteActivado;
+}
+
+function prepararWidgets() {
+  const contenedor=$('widgets-inicio'), reloj=document.createElement('article');
+  reloj.className='panel';reloj.innerHTML='<h3>Fecha y hora</h3><p id="reloj-fecha"></p><strong id="reloj-hora" class="clock-value"></strong><p class="micro">Hora local de tu dispositivo.</p>';contenedor.append(reloj);
+  const tarjetas=[...contenedor.children],nombres=['Mi curso','Próximas actividades','Mi asistencia','Fecha y hora'],clave='grace-widgets-inicio';
+  let orden=tarjetas.map((_,id)=>({id,visible:true}));
+  try{const v=JSON.parse(sessionStorage.getItem(clave));if(Array.isArray(v)&&v.length===tarjetas.length&&new Set(v.map(x=>x.id)).size===tarjetas.length&&v.every(x=>Number.isInteger(x.id)&&x.id>=0&&x.id<tarjetas.length&&typeof x.visible==='boolean'))orden=v;}catch{}
+  function aplicar(){orden.forEach(x=>{tarjetas[x.id].hidden=!x.visible;contenedor.append(tarjetas[x.id]);});sessionStorage.setItem(clave,JSON.stringify(orden));$('lista-widgets').innerHTML=orden.map((x,i)=>`<div class="widget-option"><label><input type="checkbox" data-widget-visible="${x.id}" ${x.visible?'checked':''}> ${nombres[x.id]}</label><span><button type="button" class="mini-btn" data-widget-mover="${i}" data-direccion="-1" aria-label="Subir ${nombres[x.id]}" ${i===0?'disabled':''}>↑</button><button type="button" class="mini-btn" data-widget-mover="${i}" data-direccion="1" aria-label="Bajar ${nombres[x.id]}" ${i===orden.length-1?'disabled':''}>↓</button></span></div>`).join('');}
+  aplicar();
+  $('personalizar-inicio').addEventListener('click',()=>$('dialogo-widgets').showModal());
+  $('cerrar-widgets').addEventListener('click',()=>$('dialogo-widgets').close());
+  $('restablecer-widgets').addEventListener('click',()=>{orden=tarjetas.map((_,id)=>({id,visible:true}));aplicar();});
+  $('lista-widgets').addEventListener('change',e=>{const c=e.target.closest('[data-widget-visible]');if(!c)return;orden.find(x=>x.id===Number(c.dataset.widgetVisible)).visible=c.checked;aplicar();$('lista-widgets').querySelector(`[data-widget-visible="${c.dataset.widgetVisible}"]`)?.focus();});
+  $('lista-widgets').addEventListener('click',e=>{const b=e.target.closest('[data-widget-mover]');if(!b)return;const i=Number(b.dataset.widgetMover),d=i+Number(b.dataset.direccion);if(d<0||d>=orden.length)return;[orden[i],orden[d]]=[orden[d],orden[i]];aplicar();});
+  function movimiento(valor){$('movimiento').value=valor;document.body.classList.toggle('movimiento-apagado',valor==='off');sessionStorage.setItem('grace-movimiento',valor);}
+  movimiento(sessionStorage.getItem('grace-movimiento')==='off'?'off':'auto');
+  $('movimiento').addEventListener('change',e=>movimiento(e.target.value));
+  function hora(){const ahora=new Date();$('reloj-fecha').textContent=ahora.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'});$('reloj-hora').textContent=ahora.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});}
+  hora();setInterval(hora,30000);
+}

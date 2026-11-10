@@ -1,6 +1,6 @@
 """Grace: lógica académica en Python y flujo revisable por el docente.
 
-Esta es una DEMOSTRACIÓN LOCAL, sin inicio de sesión ni permisos reales.
+Demostración local: ServidorGrace aplica cuentas y permisos a este servicio.
 No usar con datos personales ni publicar el servidor en Internet.
 """
 from copy import deepcopy
@@ -77,14 +77,21 @@ def _id_entero(valor, nombre='ID'):
 class ServicioGrace:
     """Servicio modular con estructuras propias y guardado atómico de estado."""
 
-    def __init__(self, carpeta_datos):
+    def __init__(self, carpeta_datos, curso_id=CURSO, nombre='Programación Estructurada', temas=None, vacio=False):
+        self.curso_id = curso_id
+        self.nombre = nombre
+        self.temas = list(TEMAS if temas is None else temas)
+        self.vacio = vacio
+        self.contexto_curso = None
         self.almacen = AlmacenJSON(carpeta_datos)
         self.lock = RLock()
+        self.registro_estudiantes = None
         self.grafo = GrafoAprendizaje()
-        for tema in TEMAS:
+        for tema in self.temas:
             self.grafo.agregar_tema(tema)
         for origen, destino in RELACIONES:
-            self.grafo.agregar_relacion(origen, destino)
+            if not vacio and origen in self.temas and destino in self.temas:
+                self.grafo.agregar_relacion(origen, destino)
         self.ia = crear_proveedor()
         self.actividades = []
         self.planes = []
@@ -98,7 +105,7 @@ class ServicioGrace:
 
     def _estado_guardable(self):
         return {
-            'version': VERSION_ESTADO, 'institucion_id': INSTITUCION, 'curso_id': CURSO,
+            'version': VERSION_ESTADO, 'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
             'actividades': self.actividades, 'planes': self.planes,
             'entregas': self.entregas, 'asistencias': self.asistencias,
             'solicitudes_pendientes': self.cola.recorrer(),
@@ -106,7 +113,7 @@ class ServicioGrace:
         }
 
     def _aplicar_estado(self, datos):
-        if not isinstance(datos, dict) or datos.get('institucion_id') != INSTITUCION or datos.get('curso_id') != CURSO:
+        if not isinstance(datos, dict) or datos.get('institucion_id') != INSTITUCION or datos.get('curso_id') != self.curso_id:
             raise ErrorDatos('El estado de Grace no corresponde a la institución y el curso de esta demo.')
         # Lee estados de la v0.3 y v0.4; las versiones desconocidas no se inventan.
         if type(datos.get('version')) is not int or datos['version'] not in (3, VERSION_ESTADO):
@@ -200,7 +207,7 @@ class ServicioGrace:
                 if not isinstance(solicitudes, dict):
                     raise ErrorDatos('Formato de solicitudes antiguas incorrecto.')
                 datos = {
-                    'version': VERSION_ESTADO, 'institucion_id': INSTITUCION, 'curso_id': CURSO,
+                    'version': VERSION_ESTADO, 'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
                     'actividades': self.almacen.leer('actividades.json', []),
                     'planes': self.almacen.leer('planes.json', []),
                     'entregas': self.almacen.leer('entregas.json', []),
@@ -219,6 +226,12 @@ class ServicioGrace:
             self._marcar_inicio()
 
     def _semilla(self):
+        if self.vacio:
+            self.actividades, self.planes, self.entregas = [], [], []
+            self.asistencias, self.atendidas = [], []
+            self.cola = ColaEnlazada()
+            self._reconstruir_arbol()
+            return
         base = [
             (105, 'Aplicar listas en Python', 'Listas', '2026-11-16'),
             (102, 'Condicionales y decisiones', 'Condicionales', '2026-11-10'),
@@ -229,7 +242,7 @@ class ServicioGrace:
             (109, 'Rutas de aprendizaje', 'Grafos', '2026-11-30'),
         ]
         self.actividades = [
-            {'id': identificador, 'institucion_id': INSTITUCION, 'curso_id': CURSO,
+            {'id': identificador, 'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
              'titulo': titulo, 'tema': tema, 'fecha': fecha,
              'descripcion': f'Práctica sobre {tema} mediante ejercicios de Python.'}
             for identificador, titulo, tema, fecha in base
@@ -252,9 +265,13 @@ class ServicioGrace:
         with self.lock:
             return self._mutar(lambda: (self._semilla() or {'mensaje': 'Datos ficticios reiniciados.'}))
 
-    @staticmethod
-    def _validar_estudiante(estudiante_id):
-        if estudiante_id not in {e['id'] for e in ESTUDIANTES}:
+    @property
+    def estudiantes(self):
+        """Registro separado de cuentas; el servicio aislado conserva la demo."""
+        return self.registro_estudiantes() if self.registro_estudiantes else deepcopy(ESTUDIANTES)
+
+    def _validar_estudiante(self, estudiante_id):
+        if estudiante_id not in {e['id'] for e in self.estudiantes}:
             raise ErrorValidacion('Selecciona un estudiante válido de la demostración.')
 
     @staticmethod
@@ -279,7 +296,8 @@ class ServicioGrace:
 
     def estado(self, estudiante_id='e1'):
         with self.lock:
-            self._validar_estudiante(estudiante_id)
+            if estudiante_id is not None or self.estudiantes:
+                self._validar_estudiante(estudiante_id)
             entregadas = {x['actividad_id'] for x in self.entregas if x['estudiante_id'] == estudiante_id}
             actividades = []
             for a in self.arbol.en_orden():
@@ -292,13 +310,13 @@ class ServicioGrace:
                 plan['origen'] = self.origenes_planes.get(plan['id'], 'reglas')
             return {
                 'version': '0.4', 'institucion': 'Campus de demostración · datos ficticios',
-                'curso': 'Programación Estructurada',
-                'estudiantes': deepcopy(ESTUDIANTES), 'estudiante_actual': estudiante_id,
+                'curso': self.nombre,
+                'estudiantes': deepcopy(self.estudiantes), 'estudiante_actual': estudiante_id,
                 'actividades': actividades, 'planes': planes,
                 'asistencias': deepcopy(self.asistencias),
                 'resumen_asistencia': self._resumen_asistencia(),
                 'estadisticas': {
-                    'estudiantes': len(ESTUDIANTES), 'actividades': len(actividades),
+                    'estudiantes': len(self.estudiantes), 'actividades': len(actividades),
                     'entregas': len(self.entregas), 'planes': len(self.planes),
                     'ayudas_pendientes': self.cola.tamano,
                     'mis_pendientes': len(actividades) - len(entregadas),
@@ -313,13 +331,16 @@ class ServicioGrace:
         with self.lock:
             objetivo = self._texto(datos.get('objetivo'), 'Objetivo', 10, 300)
             tema = datos.get('tema')
-            if tema not in TEMAS:
+            if tema not in self.temas:
                 raise ErrorValidacion('Selecciona un tema válido.')
             fecha = self._fecha(datos.get('fecha'))
-            contexto = self._contexto_ia('e1', tema=tema)
+            contexto = self._contexto_ia(self.estudiantes[0]['id'] if self.estudiantes else None, tema=tema)
+            claves_publicas = ('actividades', 'fechas_actividades', 'ruta_bfs', 'tamano_cola')
+            if self.contexto_curso:
+                claves_publicas += ('curso', 'sesiones')
             contexto['publico'] = {
                 clave: contexto['publico'][clave]
-                for clave in ('actividades', 'fechas_actividades', 'ruta_bfs', 'tamano_cola')
+                for clave in claves_publicas
             }
         generado = self.ia.crear_plan(objetivo, tema, contexto, CAMPOS_PLAN)
         contenido = generado['contenido']
@@ -329,7 +350,7 @@ class ServicioGrace:
             def mutacion():
                 plan = {
                     'id': max((p['id'] for p in self.planes), default=0) + 1,
-                    'institucion_id': INSTITUCION, 'curso_id': CURSO,
+                    'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
                     'objetivo': objetivo, 'tema': tema, 'fecha': fecha,
                     'contenido': contenido,
                     'estado': 'borrador', 'actividad_id': None,
@@ -382,7 +403,7 @@ class ServicioGrace:
                 if siguiente == 'publicado':
                     nuevo_id = max((a['id'] for a in self.actividades), default=100) + 1
                     actividad = {
-                        'id': nuevo_id, 'institucion_id': INSTITUCION, 'curso_id': CURSO,
+                        'id': nuevo_id, 'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
                         'titulo': f"Práctica: {plan['tema']}", 'tema': plan['tema'],
                         'descripcion': plan['objetivo'], 'fecha': plan['fecha'],
                     }
@@ -398,7 +419,7 @@ class ServicioGrace:
         with self.lock:
             fecha = self._fecha(datos.get('fecha'))
             registros = datos.get('registros')
-            if not isinstance(registros, list) or len(registros) != len(ESTUDIANTES):
+            if not isinstance(registros, list) or len(registros) != len(self.estudiantes):
                 raise ErrorValidacion('Envía un registro por cada estudiante de la clase.')
             recibidos = {}
             for registro in registros:
@@ -411,7 +432,7 @@ class ServicioGrace:
                 if not isinstance(registro['presente'], bool):
                     raise ErrorValidacion('Presente debe ser verdadero o falso.')
                 recibidos[estudiante_id] = registro['presente']
-            if set(recibidos) != {e['id'] for e in ESTUDIANTES}:
+            if set(recibidos) != {e['id'] for e in self.estudiantes}:
                 raise ErrorValidacion('El lote debe incluir a todos los estudiantes.')
 
             def mutacion():
@@ -420,7 +441,7 @@ class ServicioGrace:
                                       if r['estudiante_id'] == estudiante_id and r['fecha'] == fecha), None)
                     if existente is None:
                         self.asistencias.append({
-                            'institucion_id': INSTITUCION, 'curso_id': CURSO,
+                            'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
                             'estudiante_id': estudiante_id, 'fecha': fecha, 'presente': presente,
                         })
                     else:
@@ -431,7 +452,7 @@ class ServicioGrace:
     def _resumen_asistencia(self):
         """Cálculos de lectura: no añade campos al archivo estado.json."""
         por_estudiante = {}
-        for estudiante in ESTUDIANTES:
+        for estudiante in self.estudiantes:
             registros = [r for r in self.asistencias if r['estudiante_id'] == estudiante['id']]
             presentes = sum(1 for r in registros if r['presente'])
             por_estudiante[estudiante['id']] = {
@@ -460,7 +481,7 @@ class ServicioGrace:
                 if existente is not None:
                     existente['presente'] = presente
                     return existente
-                registro = {'institucion_id': INSTITUCION, 'curso_id': CURSO,
+                registro = {'institucion_id': INSTITUCION, 'curso_id': self.curso_id,
                             'estudiante_id': estudiante_id, 'fecha': fecha, 'presente': presente}
                 self.asistencias.append(registro)
                 return registro
@@ -515,18 +536,18 @@ class ServicioGrace:
             return deepcopy(resultado)
 
     def calcular_ruta(self, inicio, destino):
-        if inicio not in TEMAS or destino not in TEMAS:
+        if inicio not in self.temas or destino not in self.temas:
             raise ErrorValidacion('Selecciona dos temas existentes.')
         return self.grafo.ruta_mas_corta(inicio, destino)
 
     def _contexto_ia(self, estudiante_id, objetivo='', tema=''):
         entregadas = {x['actividad_id'] for x in self.entregas if x['estudiante_id'] == estudiante_id}
-        resumen = self._resumen_asistencia()['por_estudiante'][estudiante_id]
+        resumen = self._resumen_asistencia()['por_estudiante'].get(estudiante_id, {'porcentaje': None})
         actividades_publicas = [
             {'id': a['id'], 'titulo': a['titulo'], 'tema': a['tema'], 'fecha': a['fecha']}
             for a in self.actividades
         ]
-        ruta = self.grafo.ruta_mas_corta('Fundamentos', tema) if tema in TEMAS else []
+        ruta = self.grafo.ruta_mas_corta('Fundamentos', tema) if tema in self.temas else []
         publico = {
             'actividades': actividades_publicas,
             'fechas_actividades': [a['fecha'] for a in actividades_publicas],
@@ -536,6 +557,10 @@ class ServicioGrace:
             'tamano_cola': self.cola.tamano,
             'porcentaje_asistencia': resumen['porcentaje'],
         }
+        if self.contexto_curso:
+            curso = self.contexto_curso()
+            publico['curso'] = {k: curso[k] for k in ('id', 'nombre')}
+            publico['sesiones'] = deepcopy(curso['sesiones'])
         return {
             'objetivo': objetivo, 'tema': tema, 'publico': publico,
             'rol': 'estudiante', 'estudiante_id': estudiante_id,
@@ -543,19 +568,32 @@ class ServicioGrace:
             'entregas_interno': deepcopy(self.entregas),
             'cola_interna': ColaInstantanea(self.cola.tamano, deepcopy(self.cola.ver_frente())),
             'asistencias_interno': deepcopy(self.asistencias),
-            'grafo_interno': deepcopy(self.grafo), 'temas_interno': tuple(TEMAS),
+            'grafo_interno': deepcopy(self.grafo), 'temas_interno': tuple(self.temas),
         }
 
-    def conversar_detallado(self, datos):
+    def conversar_detallado(self, datos, solo_propio=False):
         with self.lock:
             mensaje = self._texto(datos.get('mensaje'), 'Mensaje', 1, 500)
             rol = datos.get('rol', 'estudiante')
             if rol not in ('estudiante', 'docente'):
                 raise ErrorValidacion('Rol no válido.')
-            estudiante_id = datos.get('estudiante_id', 'e1')
-            self._validar_estudiante(estudiante_id)
-            contexto = self._contexto_ia(estudiante_id)
+            estudiante_id = datos.get('estudiante_id', self.estudiantes[0]['id'] if self.estudiantes else None)
+            if rol == 'estudiante' or estudiante_id is not None:
+                self._validar_estudiante(estudiante_id)
+            tema = datos.get('tema', '')
+            if tema and tema not in self.temas:
+                raise ErrorValidacion('Selecciona un tema válido.')
+            contexto = self._contexto_ia(estudiante_id, tema=tema)
+            if solo_propio:
+                contexto['publico']['sesiones'] = [s for s in contexto['publico']['sesiones'] if s['publicada']]
             contexto['rol'] = rol
+            if solo_propio:
+                # Filtrar antes de reglas/proveedor: tampoco el frente ni los totales ajenos.
+                propias = [s for s in self.cola.recorrer() if s['estudiante_id'] == estudiante_id]
+                contexto['cola_interna'] = ColaInstantanea(len(propias), deepcopy(propias[0]) if propias else None)
+                contexto['publico']['tamano_cola'] = len(propias)
+                for clave in ('entregas_interno', 'asistencias_interno'):
+                    contexto[clave] = [r for r in contexto[clave] if r['estudiante_id'] == estudiante_id]
         return self.ia.responder_chat(mensaje, contexto)
 
     def conversar(self, datos):

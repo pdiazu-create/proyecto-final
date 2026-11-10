@@ -7,6 +7,28 @@ Grace es la visión de una plataforma educativa institucional privada. Este repo
 
 **La plataforma no reemplaza ningún sistema universitario ni está lista para usarse con cuentas reales.** Su objetivo es demostrar y explicar los conceptos de Programación Estructurada con datos ficticios.
 
+## Cuentas de demostración — parte 1
+
+Al ejecutar `python app.py`, Grace requiere iniciar sesión. Las cuentas iniciales son `ana`, `diego` y `sofia` (estudiantes), `martin` (profesor) y `coordinacion` (coordinación). Todas usan la contraseña de prueba **12345**. La contraseña común es una decisión para esta demostración local; no se debe usar con datos reales.
+
+Coordinación crea nuevas cuentas indicando nombre, usuario único y rol. Todas reciben `12345`. Cada persona puede editar su nombre y presentación; los profesores también sus datos académicos. Facultad y carrera se eligen en listas vinculadas de un catálogo inicial de demostración (no es el catálogo oficial de una universidad). Sus identificadores comunes quedan preparados para las futuras comunidades; un texto libre antiguo no concede afiliación.
+
+En Mi perfil puedes cambiar o quitar foto y banner. Se admiten JPG, PNG o WebP de hasta 5 MB; el navegador recorta al centro, convierte a PNG y elimina metadatos. El servidor vuelve a validar formato, dimensiones y tamaño. Se guardan localmente en `data/perfiles.json`, separados de las cuentas y del estado académico; no se envían a la IA. Después de actualizar es necesario reiniciar Grace con Detener Grace y Abrir Grace.
+
+El servidor comprueba los permisos en cada solicitud. Un estudiante solo consulta sus propios registros; el profesor prepara y publica planes y registra asistencia; coordinación administra las cuentas. Cambiar la dirección del navegador no cambia el rol. Usa **Cerrar sesión** para cambiar de persona.
+
+Las cuentas se guardan en `data/cuentas.json`, separadas del estado académico versión 4. Las contraseñas se guardan mediante hash PBKDF2 con sal individual. Las sesiones usan cookies HttpOnly y SameSite=Strict, caducan y se eliminan al cerrar sesión o reiniciar el servidor. Conserva ambos archivos de datos al respaldar tu instalación.
+
+Si Grace ya estaba abierta al actualizar, detén y vuelve a iniciar el servidor con tu acceso habitual. No es necesario cambiar ni guardar la clave de IA para esta actualización.
+
+## Fase 2 · Cursos y clases
+
+En **Mis clases**, los estudiantes consultan sus cursos matriculados y el contenido publicado; el profesor administra únicamente sus cursos asignados y coordinación puede crear cursos, asignar docentes, gestionar matrículas y horarios. Temas, syllabus y sesiones guardados permanecen como borradores hasta que el profesor responsable ejecuta la acción explícita de publicación. La edición de contenido publicado lo devuelve a borrador.
+
+Los horarios semanales se guardan en el servidor, muestran lunes a viernes con fechas locales y validan edificio, piso, aula y conflictos para docentes, estudiantes y espacios. Las tarjetas y horarios del catálogo de demostración están separados y marcados como ficticios. El prototipo no contiene un catálogo institucional real ni reemplaza la validación por parte de la institución.
+
+La configuración de cursos se guarda en `data/cursos.json`. El curso principal conserva el estado académico histórico en `data/estado.json`; la primera inicialización guarda una copia verificable en `data/cursos/migraciones/estado-anterior.json`. Los cursos nuevos guardan su estado en `data/cursos/<id>/estado.json`. No borres ni reemplaces estos archivos al actualizar.
+
 ## 1. Ejecutar en Visual Studio Code (Windows)
 
 1. Clona el repositorio independiente `pdiazu-create/proyecto-final` y abre **`Grace_AI_v0.4.code-workspace`** con Visual Studio Code; o abre la carpeta del repositorio con **Archivo → Abrir carpeta**.
@@ -57,7 +79,7 @@ Para diagnosticar Gemini, ejecuta `python diagnostico_ia.py` en un entorno con `
 
 En Windows puedes ejecutar `powershell -NoProfile -ExecutionPolicy Bypass -File .\iniciar_ia.ps1` desde esta carpeta. Introduce la clave solo en esa terminal: la entrada está oculta, no se guarda en archivos y se elimina del entorno al cerrar el servidor. Abre http://127.0.0.1:8000. La respuesta muestra su origen: IA o reglas (respaldo). Abrir la plataforma de OpenAI por sí solo no configura la conexión de Grace.
 
-El chat ahora se abre con «Hablar con Grace», flota sin reservar espacio en las páginas y conserva sus mensajes al cerrarlo y reabrirlo. Las fechas de actividades provienen del estado; las horas mostradas son horarios de demostración.
+El chat ahora se abre con «Hablar con Grace», flota sin reservar espacio en las páginas y conserva sus mensajes al cerrarlo y reabrirlo. Las fechas y horarios académicos provienen del servidor; el horario ficticio del catálogo se identifica por separado.
 
 Grace funciona con reglas locales por defecto. Para activar el proveedor OpenAI por HTTP, configura las variables de entorno antes de iniciar el servidor:
 
@@ -79,6 +101,8 @@ Si `python` no funciona en Windows, utiliza `py app.py`.
 ```powershell
 python -m unittest discover -s tests -v
 ```
+
+Estado actual de la Fase 2: **163 pruebas Python** y **3 pruebas JavaScript** (`node --test tests\ajuste_integral.test.cjs tests\cuentas_cliente.test.cjs tests\perfil_visual.test.cjs`).
 
 La v0.4 se verificó con **94 pruebas**, incluyendo estructuras, persistencia, estados inválidos, fallos de escritura simulados, endpoints HTTP y respaldos seguros de IA. Estas pruebas no reemplazan una auditoría de seguridad ni las pruebas visuales en cada navegador.
 
@@ -111,7 +135,7 @@ También puedes ejecutar `python demo_consola.py`: aparece un menú interactivo 
 | Estudiantes | Consultar tareas publicadas, registrar entregas, revisar su asistencia y pedir apoyo | Implementado |
 | Estructuras | Ver cola FIFO, buscar en árbol, explorar grafo y ruta BFS | Implementado |
 | Grace | Asistente por reglas o proveedor API opcional, con datos mínimos del curso y nueve plantillas | **Reglas locales por defecto; API opcional con respaldo** |
-| Cuentas y permisos institucionales | Autenticación, roles y aislamiento real entre instituciones | **No implementado** |
+| Cuentas de demostración | Inicio de sesión y permisos de estudiante, profesor y coordinación | **Implementado localmente; sin aislamiento institucional** |
 | Integración con UAM | Leer o modificar información del sistema universitario | **No implementado** |
 | Voz / offline | Voz y sincronización | **Propuesta futura** |
 
@@ -175,12 +199,12 @@ proyecto-final/
 │   └── ...                      # Servicio, estructuras, persistencia e IA
 ├── web/
 │   └── ...                      # HTML, CSS y JavaScript de la interfaz
-├── tests/                       # 128 pruebas Python y prueba JavaScript
+├── tests/                       # Pruebas Python y JavaScript
 ├── data/                        # Estado local de la aplicación
 ├── .vscode/                     # Tareas y depuración
 ├── .gitignore
 ├── Grace_AI_v0.4.code-workspace
-└── grace boceto final/
+└── defensa proyecto final/
     ├── bocetos/
     ├── documentacion/
     ├── capturas/
@@ -191,13 +215,13 @@ proyecto-final/
 
 ### Material para exponer
 
-En [`grace boceto final/documentacion/GUIA_EXPOSICION.md`](<grace boceto final/documentacion/GUIA_EXPOSICION.md>) encontrarás el guion de exposición y las presentaciones PDF/PPTX en [`grace boceto final/presentaciones/`](<grace boceto final/presentaciones/>).
+En [`defensa proyecto final/documentacion/GUIA_EXPOSICION.md`](<defensa proyecto final/documentacion/GUIA_EXPOSICION.md>) encontrarás el guion de exposición y las presentaciones PDF/PPTX en [`defensa proyecto final/presentaciones/`](<defensa proyecto final/presentaciones/>).
 
-Los bocetos de referencia están en [`grace boceto final/bocetos/`](<grace boceto final/bocetos/>), las capturas en [`grace boceto final/capturas/`](<grace boceto final/capturas/>) y los informes/resultados históricos en [`grace boceto final/reportes/`](<grace boceto final/reportes/>).
+Los bocetos de referencia están en [`defensa proyecto final/bocetos/`](<defensa proyecto final/bocetos/>), las capturas en [`defensa proyecto final/capturas/`](<defensa proyecto final/capturas/>) y los informes/resultados históricos en [`defensa proyecto final/reportes/`](<defensa proyecto final/reportes/>).
 
 ## 7. Limitaciones y seguridad
 
-- **No se usan usuarios ni contraseñas reales.** Las vistas docente/estudiante son una simulación de funciones, no una autorización de seguridad. Cualquier persona con acceso a la demo puede llamar las rutas locales de la API.
+- **Solo cuentas ficticias y contraseña de prueba común.** El servidor normal exige sesión y verifica permisos; no es un sistema de identidad institucional ni cuenta con recuperación por correo.
 - El servidor escucha únicamente en `127.0.0.1`. **No lo despliegues públicamente** ni ingreses datos académicos privados.
 - La persistencia JSON sirve para aprender manejo de archivos. No soporta múltiples procesos, concurrencia entre equipos, respaldos gestionados, migraciones complejas ni auditoría institucional.
 - Los nombres y actividades de ejemplo son ficticios.
@@ -207,11 +231,11 @@ Los bocetos de referencia están en [`grace boceto final/bocetos/`](<grace bocet
 
 ## 8. Repositorio de origen académico
 
-El proyecto toma como referencia los ejercicios previos del curso en [Programacion_Estructurada_G6](https://github.com/pdiazu-create/Programacion_Estructurada_G6), especialmente programación de funciones, matrices, listas, archivos y el ejemplo básico de web con Flask. **No modifica ese repositorio.** Grace vive en un repositorio separado; consulta la [guía de GitHub](<grace boceto final/documentacion/GUIA_GITHUB.md>).
+El proyecto toma como referencia los ejercicios previos del curso en [Programacion_Estructurada_G6](https://github.com/pdiazu-create/Programacion_Estructurada_G6), especialmente programación de funciones, matrices, listas, archivos y el ejemplo básico de web con Flask. **No modifica ese repositorio.** Grace vive en un repositorio separado; consulta la [guía de GitHub](<defensa proyecto final/documentacion/GUIA_GITHUB.md>).
 
 ### ¿Qué se ha probado en navegador?
 
-Se ejecutaron pruebas HTTP locales, y se inspeccionaron capturas renderizadas en Chromium a 360, 768 y 1280 px con el HTML/CSS real y datos de la API **simulados**. La navegación directa de Chromium al servidor local estuvo bloqueada, por lo que esa revisión no demuestra un flujo completo de navegador contra el servidor Python. Antes de exponer, abre Grace en Chrome o Edge en tu equipo y practica el recorrido de [`grace boceto final/documentacion/CHECKLIST_VISUAL.md`](<grace boceto final/documentacion/CHECKLIST_VISUAL.md>).
+Se ejecutaron pruebas HTTP locales, y se inspeccionaron capturas renderizadas en Chromium a 360, 768 y 1280 px con el HTML/CSS real y datos de la API **simulados**. La navegación directa de Chromium al servidor local estuvo bloqueada, por lo que esa revisión no demuestra un flujo completo de navegador contra el servidor Python. Antes de exponer, abre Grace en Chrome o Edge en tu equipo y practica el recorrido de [`defensa proyecto final/documentacion/CHECKLIST_VISUAL.md`](<defensa proyecto final/documentacion/CHECKLIST_VISUAL.md>).
 
 ### ¿Puedo publicar la web con GitHub Pages?
 
@@ -228,4 +252,4 @@ Desarrollado con apoyo de herramientas de IA; el autor revisó y puede explicar 
 
 ## Actualización de boceto final (2026-11-08)
 
-Consulta [`grace boceto final/documentacion/INTEGRACION_BOCETO_FINAL.md`](<grace boceto final/documentacion/INTEGRACION_BOCETO_FINAL.md>) para roles simulados, cursos/horarios de muestra, limitaciones y el recuento real de 128 pruebas.
+Consulta [`defensa proyecto final/documentacion/INTEGRACION_BOCETO_FINAL.md`](<defensa proyecto final/documentacion/INTEGRACION_BOCETO_FINAL.md>) para el boceto original. El estado actual implementa la gestión de cursos, publicación docente y horarios de servidor descritos arriba; las demostraciones continúan identificadas por separado.

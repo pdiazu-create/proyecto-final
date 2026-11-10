@@ -12,3 +12,6 @@ data/*.json
 Thumbs.db
 
 data/.grace_inicializada
+data/cursos/
+data/.cursos_inicializados
+data/.cuentas_inicializadas

@@ -1,0 +1,30 @@
+// Verifica comportamiento con datos inyectados; no usa la API ni claves.
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const nodos=new Map();
+function nodo(id){if(!nodos.has(id)){const s=new Set();nodos.set(id,{id,options:[],textContent:'',innerHTML:'',classList:{contains:c=>s.has(c),toggle(c,v){v?s.add(c):s.delete(c);},remove(c){s.delete(c);}},setAttribute(){},focus(){}});}return nodos.get(id);}
+const paginas=['inicio','mis-clases','horario','curso','asistente','sesion'].map(id=>{const e=nodo(id);e.classList.toggle('page',true);return e;});
+const nav=['inicio','cursos','calendario','asistente'].map(page=>({dataset:{page},classList:{toggle(c,v){this.activo=v;}},setAttribute(k,v){this[k]=v;},removeAttribute(k){delete this[k];}}));
+const asistencia=[{value:''},{value:'true'},{value:'false'}];
+const doc={body:nodo('body'),getElementById:nodo,addEventListener(){},querySelector(){return null;},querySelectorAll(s){return s==='.page'?paginas:s==='[data-page]'?nav:s==='[data-clase-estudiante]'?asistencia:[];}};
+const c=vm.createContext({document:doc,window:{scrollTo(){},matchMedia:()=>({matches:true})},sessionStorage:{getItem(){return 'estudiante';}},setTimeout,clearTimeout,console});
+for(const f of ['catalogo_demo.js','horario.js','app.js'])vm.runInContext(fs.readFileSync('web/'+f,'utf8'),c);
+const ejecutar=s=>vm.runInContext(s,c);
+const datos={actividades:[{id:1,titulo:'Primera',fecha:'2026-11-09',tema:'Listas',descripcion:'Contenido <script>malo()</script>',entregada:true},{id:2,titulo:'Segunda',fecha:'2026-11-10',tema:'Ciclos',descripcion:'Práctica',entregada:false},{id:3,titulo:'Tercera',fecha:'2026-11-13',tema:'Grafos',descripcion:'Recorrido',entregada:false}],planes:[{id:8,actividad_id:1,estado:'borrador',contenido:{apertura:'PRIVADO',desarrollo:'PRIVADO',practica:'PRIVADO',evaluacion:'PRIVADO'}}]};
+c.fixture=datos;ejecutar('estado=fixture');const antes=JSON.stringify(datos);
+assert.equal(ejecutar("estadoSesion('2026-11-10','2026-11-10')"),'Hoy');
+assert.equal(ejecutar("estadoSesion('2026-11-09','2026-11-10')"),'Anterior');
+assert.equal(ejecutar("sesionesFiltradas('pendientes','2026-11-10').length"),2);
+assert.equal(ejecutar("sesionesFiltradas('anteriores','2026-11-10')[0].id"),1);
+assert.equal(ejecutar("sesionesFiltradas('proximas','2026-11-10').length"),2);
+assert.equal(ejecutar('datosSesion(999)'),null);
+assert.equal(ejecutar('datosSesion(1).plan'),undefined);
+ejecutar('renderizarSesion(1)');
+assert.ok(!nodo('sesion-contenido').innerHTML.includes('PRIVADO'));
+assert.ok(nodo('sesion-contenido').innerHTML.includes('&lt;script&gt;'));
+assert.ok(!nodo('sesion-contenido').innerHTML.includes('<script>'));
+assert.equal(JSON.stringify(datos),antes,'Navegar/renderizar no debe modificar los datos');
+ejecutar("navegar('cursos')");assert.ok(nodo('mis-clases').classList.contains('active'));assert.equal(nav.filter(n=>n['aria-current']==='page').length,1);assert.equal(nav.find(n=>n['aria-current']).dataset.page,'cursos');
+ejecutar("navegar('calendario')");assert.ok(nodo('horario').classList.contains('active'));assert.equal(nav.find(n=>n['aria-current']).dataset.page,'calendario');
+ejecutar("navegar('asistente')");assert.ok(doc.body.classList.contains('vista-asistente'));
+const resumen=ejecutar('resumenAntesDeGuardar()');assert.equal(resumen.presentes,1);assert.equal(resumen.ausentes,1);assert.equal(resumen.sinRegistrar,1);
+console.log('OK: sesiones por fecha y entrega, sin filtración de borradores/XSS, lectura sin mutación, navegación única y asistencia sin registrar.');
