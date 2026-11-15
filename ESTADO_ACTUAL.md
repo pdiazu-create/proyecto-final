@@ -85,7 +85,7 @@ Esto confirma la versión servida y la configuración de API. **No demuestra una
 
 | # | Problema | Estado comprobado |
 | --- | --- | --- |
-| 1 | IA sin nombre/contexto, respuestas genéricas, memoria de ocho turnos y pausa de dos segundos | **La mejora solicitada no está integrada en el código actual.** `ProveedorAPI.proponer_accion(mensaje)` envía mensaje y reglas del catálogo, sin usuario, cursos, actividades ni historial. Si devuelve texto con acción `ninguna`, `GestorAcciones.procesar` lo responde directamente; no llega al chat académico contextual. La ruta antigua sí arma contexto de curso cuando se utiliza. El `deque` de mensajes almacena tiempos para limitar frecuencia, no turnos de conversación. Sigue `MIN_INTERVAL_SECONDS = 2.0`, además de 10 mensajes/minuto por usuario. |
+| 1 | Contexto autorizado y continuidad del asistente | **Integrado el 14/11/2026.** Cada mensaje usa nombre de pila y rol de la sesión, cursos autorizados y solo datos publicados; estudiantes reciben actividades, vencimiento y entrega propia; docentes reciben próxima clase y conteos de revisión/solicitudes. La acción `ninguna` utiliza ese contexto y ofrece accesos rápidos. Ocho turnos en RAM por usuario/sesión, descartados al cambiar contexto o tras 30 minutos de inactividad. Personalidad fija, sin relleno; respaldo contextual con origen exacto. Verificados SOLO `test_acciones_autorizadas.py` (17 OK) y `test_ia.py` (14 OK), con proveedores falsos. Sin navegador ni llamada real; persiste el ResourceWarning del HTTPError simulado. |
 | 2 | Comunidad muestra «Failed to fetch» | **Causa del incidente no reproducida.** El módulo ya responde 200 y las pruebas pasan. El cliente aún muestra `error.message` directamente y no incorpora botón Reintentar en el error de carga. Un 200 del archivo JS no prueba la consulta autenticada de Comunidad. |
 | 3 | Chat abierto intercepta «Cerrar sesión» | **Reportado por el usuario, pendiente de reproducción visual.** El panel conserva posicionamiento fijo y `z-index:40`; en ventanas bajas puede alcanzar la barra superior. No se corrigió durante esta revisión. |
 | 4 | Aviso transparente sobre presencia | **Pendiente para el estudiante.** Hay aviso al profesor de que la señal no es prueba y debe confirmar. `iniciarLatidoPresencia` envía cada 45 s mientras el aula está activa y la pestaña visible; no muestra un aviso equivalente al estudiante. El servidor rechaza fechas distintas de hoy; el cliente no comprueba esa fecha antes del primer envío, por lo que abrir una sesión pasada puede provocar un aviso de error. |
@@ -96,13 +96,13 @@ Esto confirma la versión servida y la configuración de API. **No demuestra una
 
 Hallazgos adicionales de la lectura, sin cambios de código:
 
-- **Límite de acciones:** hay un máximo de ocho acciones por sesión autenticada. El contador no se renueva por tiempo en `GestorAcciones`, aunque el mensaje dice «Podemos continuar en un momento». Puede bloquear un ensayo largo; documentar y revisar antes de la defensa.
+- **Límite de acciones:** ocho acciones por usuario/sesión en ventana móvil de 60 segundos; el cupo se recupera sin iniciar otra sesión. Se conservan diez mensajes/minuto por usuario, filtro, catálogo y confirmación humana. Intervalo de API reducido de 2 a 0,2 segundos; límites verificados en las pruebas indicadas.
 - **Alternar tema:** el proveedor admite `alternar` y el ejecutor tiene una rama para ello, pero `validar_propuesta` solo acepta `claro` u `oscuro`. Es una inconsistencia de código; falta un caso específico que la verifique de extremo a extremo.
-- **Origen de respaldo:** el nuevo `ProveedorConRespaldo.proponer_accion` devuelve el origen `reglas` al fallar la API. A diferencia del chat anterior, esa ruta no conserva la etiqueta `reglas (respaldo)`. Decidir y aplicar un criterio uniforme y honesto.
+- **Origen de respaldo:** la ruta contextual conserva `reglas (respaldo)` ante fallo de API; las reglas locales normales mantienen `reglas`. Se actualizó únicamente la expectativa antigua de esa etiqueta, con autorización del usuario.
 
 ## Pendientes por riesgo para la defensa
 
-1. Mejorar contexto autorizado y continuidad del chat sin permitir que el mensaje cambie identidad, permisos ni publicación. Revisar los límites y cubrir el caso de ocho acciones durante el ensayo.
+1. Contexto autorizado, memoria y límites integrados y comprobados en las dos pruebas indicadas; queda comprobar la conversación con el proveedor real tras reiniciar Grace.
 2. Añadir transparencia de presencia y comprobar con cuentas separadas que una señal de conexión nunca acredita asistencia física por sí sola.
 3. Reproducir y corregir Comunidad y la superposición del chat. Verificar acceso a cerrar sesión, errores comprensibles y reintento.
 4. Preparar un escenario aislado y repetible con profesor, tres estudiantes, sesión de hoy, próxima sesión y actividad publicada. Conservar intactos los datos de trabajo.
@@ -148,7 +148,7 @@ Para repetir la auditoría sin que la importación inicial use `data/`, asignar 
 
 **Leer este archivo y comprobar `git status` y `git log -1` antes de cualquier edición.** Si Copilot dejó cambios nuevos, describirlos y preguntar antes de tocar esos archivos.
 
-La tarea de esta revisión termina con el commit documental. La siguiente tanda recomendada es **contexto autorizado del asistente y límites de conversación**, con pruebas de aislamiento entre usuarios y de acciones sensibles. Mantener la rama actual hasta acordar la integración. No presentar la memoria de ocho turnos como hecha y no volver a implementar A–F.
+La tanda de contexto autorizado y límites está integrada y verificada con proveedores falsos. Mantener la rama actual hasta acordar la integración; pendiente comprobación visual y llamada real. No volver a implementar A–F.
 
 Al terminar cada tanda, actualizar este archivo con resultados, límites de la verificación, commit de código y siguiente acción. La copia antigua en `defensa proyecto final/` debe remitir aquí para evitar estados contradictorios.
 
@@ -164,4 +164,4 @@ Al terminar cada tanda, actualizar este archivo con resultados, límites de la v
 | Árbol binario | `grace/estructuras.py`: `ArbolBinarioBusqueda.insertar`, `buscar`; `grace/servicio.py`: `_reconstruir_arbol` | Índice propio para localizar actividades por ID. |
 | Grafo | `grace/estructuras.py`: `GrafoAprendizaje.recorrido_anchura`, `ruta_mas_corta` | Relaciones entre temas y recorrido BFS calculado por Python; la IA puede explicar el resultado. |
 
-Reconocer estas limitaciones antes de que se pregunten: cuentas de demostración, operación local, presencia digital sin verificación física, moderación léxica limitada, dependencia de cuota/red para IA, memoria conversacional todavía pendiente y calidad final de documentos sin validación visual actual.
+Reconocer estas limitaciones antes de que se pregunten: cuentas de demostración, operación local, presencia digital sin verificación física, moderación léxica limitada, dependencia de cuota/red para IA, memoria conversacional temporal (sin persistencia) y calidad final de documentos sin validación visual actual.

@@ -15,6 +15,7 @@ from .cuentas import ErrorAcceso
 from .catalogo_acciones import CATALOGO_ACCIONES, ErrorPropuestaEstructurada, PANTALLAS
 from .estructuras import ColaEnlazada
 from .servicio import ErrorValidacion
+from .asistente import responder_contexto
 
 DIAS = ('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo')
 MAX_MENSAJES_POR_MINUTO = 10
@@ -137,6 +138,8 @@ def horarios_usuario(cursos, usuario, ahora=None):
                 f"{horario['edificio']} · {horario['aula']}", fecha,
             ))
         for sesion in curso['sesiones']:
+            if not sesion.get('publicada'):
+                continue
             fecha = date.fromisoformat(sesion['fecha'])
             if fecha < hoy or (fecha == hoy and sesion['inicio'] <= ahora.strftime('%H:%M')):
                 continue
@@ -160,6 +163,8 @@ def resumen_semana(cursos, usuario, ahora=None):
                 f"{horario['edificio']} · {horario['aula']}", fecha,
             ))
         for sesion in curso['sesiones']:
+            if not sesion.get('publicada'):
+                continue
             fecha = date.fromisoformat(sesion['fecha'])
             if lunes <= fecha < limite:
                 bloques.append(_bloque(
@@ -180,10 +185,76 @@ class GestorAcciones:
         self.reloj = reloj_monotono or reloj.monotonic
         self.lock = threading.Lock()
         self.mensajes = defaultdict(deque)
-        self.acciones_sesion = defaultdict(int)
+        self.acciones_sesion = defaultdict(deque)
+        self.conversaciones = {}
         self.pendientes = ColaEnlazada()
 
     def procesar(self, mensaje, usuario, sesion_id, proveedor, cursos, trabajo, presencia):
+        contexto = self._contexto_autorizado(usuario, cursos, trabajo)
+        clave = (usuario['id'], sesion_id)
+        huella = json.dumps(contexto, ensure_ascii=False, sort_keys=True)
+        ahora = self.reloj()
+        with self.lock:
+            # Solo memoria temporal. Invalidar si cambian permisos o publicaciones.
+            for antigua in list(self.conversaciones):
+                if ahora - self.conversaciones[antigua]['uso'] >= 1800:
+                    del self.conversaciones[antigua]
+            memoria = self.conversaciones.get(clave)
+            if memoria is None or memoria['contexto'] != huella:
+                if len(self.conversaciones) >= 128:
+                    del self.conversaciones[min(self.conversaciones,
+                                               key=lambda k: self.conversaciones[k]['uso'])]
+                memoria = {'contexto': huella, 'turnos': deque(maxlen=8), 'uso': ahora}
+                self.conversaciones[clave] = memoria
+            memoria['uso'] = ahora
+            historial = list(memoria['turnos'])
+        resultado = self._procesar(mensaje, usuario, sesion_id, proveedor, cursos, trabajo,
+                                   presencia, contexto, historial)
+        if resultado and isinstance(mensaje, str) and not self.filtro.bloqueado(mensaje):
+            with self.lock:
+                if self.conversaciones.get(clave) is memoria:
+                    memoria['turnos'].append({'usuario': mensaje[:MAX_MENSAJE],
+                                              'asistente': resultado['respuesta'][:1500]})
+        return resultado
+
+    def _contexto_autorizado(self, usuario, cursos, trabajo):
+        """Proyección mínima de datos autorizados; nunca se toma identidad del texto."""
+        contexto = {'nombre': usuario['nombre'].split()[0], 'rol': usuario['rol']}
+        if usuario['rol'] not in ('estudiante', 'profesor'):
+            return contexto
+        with cursos.lock:
+            lista = cursos.listar(usuario)['cursos']
+            contexto['cursos'] = [c['nombre'][:100] for c in lista[:12]]
+            def bloque_publico(b):
+                return {k: str(b[k])[:120] for k in ('curso', 'titulo', 'fecha', 'inicio', 'fin', 'aula')
+                        if k in b}
+            horarios = horarios_usuario(cursos, usuario)
+            contexto['proxima_sesion'] = bloque_publico(horarios[0]) if horarios else None
+            contexto['horario'] = [bloque_publico(b) for b in resumen_semana(cursos, usuario)[:10]]
+            if usuario['rol'] == 'profesor':
+                contexto['entregas_por_revisar'] = sum(
+                    p['cantidad'] for p in trabajo.pendientes_inicio(usuario)['pendientes'])
+                contexto['solicitudes_pendientes'] = sum(
+                    cursos.servicio(c['id'], usuario).cola.tamano for c in lista)
+            else:
+                actividades = []
+                for curso in lista:
+                    for sesion in curso['sesiones']:
+                        if not sesion.get('publicada'):
+                            continue
+                        registros = trabajo.listar(curso['id'], sesion['id'], usuario)['registros']
+                        entregadas = {r['actividad_id'] for r in registros if r['tipo'] == 'entrega'}
+                        for a in registros:
+                            if a['tipo'] == 'actividad' and a.get('publicada', True):
+                                actividades.append({'curso': curso['nombre'][:100],
+                                    'titulo': a['titulo'][:120], 'vence': a.get('vence'),
+                                    'entregada': a['id'] in entregadas})
+                contexto['actividades'] = actividades[:20]
+                contexto['hay_mas_actividades'] = len(actividades) > 20
+        return contexto
+
+    def _procesar(self, mensaje, usuario, sesion_id, proveedor, cursos, trabajo, presencia,
+                  contexto, historial):
         if not isinstance(mensaje, str) or not mensaje.strip() or len(mensaje) > MAX_MENSAJE:
             raise ErrorValidacion('El mensaje debe tener entre 1 y 500 caracteres.')
         self._limitar_mensaje(usuario['id'])
@@ -194,7 +265,9 @@ class GestorAcciones:
                 'reglas',
             )
         try:
-            propuesta = proveedor.proponer_accion(mensaje)
+            contextual = getattr(proveedor, 'proponer_con_contexto', None)
+            propuesta = (contextual(mensaje, contexto, historial) if contextual
+                         else proveedor.proponer_accion(mensaje))
         except ErrorPropuestaEstructurada:
             self.registro.registrar(usuario, 'intencion', 'rechazada', 'respuesta_estructurada_invalida')
             return self._respuesta(
@@ -202,7 +275,7 @@ class GestorAcciones:
                 'IA',
             )
         origen = propuesta.get('origen', 'reglas') if isinstance(propuesta, dict) else 'reglas'
-        if origen not in ('IA', 'reglas'):
+        if origen not in ('IA', 'reglas', 'reglas (respaldo)'):
             origen = 'reglas'
         if not isinstance(propuesta, dict):
             self.registro.registrar(usuario, 'intencion', 'rechazada', 'formato_invalido')
@@ -227,11 +300,15 @@ class GestorAcciones:
         self.registro.registrar(usuario, accion_propuesta, 'propuesta', 'recibida')
         if accion_propuesta != 'ninguna':
             with self.lock:
-                if self.acciones_sesion[sesion_id] >= MAX_ACCIONES_POR_SESION:
+                ahora = self.reloj()
+                ventana = self.acciones_sesion[(usuario['id'], sesion_id)]
+                while ventana and ahora - ventana[0] >= VENTANA_SEGUNDOS:
+                    ventana.popleft()
+                if len(ventana) >= MAX_ACCIONES_POR_SESION:
                     self.registro.registrar(usuario, accion_propuesta, 'rechazada', 'limite_por_sesion')
-                    return self._respuesta('Ya atendí varias acciones en esta sesión. Podemos continuar en un momento.',
+                    return self._respuesta('Alcanzaste ocho acciones en un minuto. El cupo se renueva en menos de un minuto.',
                                            origen)
-                self.acciones_sesion[sesion_id] += 1
+                ventana.append(ahora)
         try:
             validada = validar_propuesta({
                 'accion': propuesta.get('accion'),
@@ -244,9 +321,12 @@ class GestorAcciones:
                 origen,
             )
         if validada is None:
-            if origen == 'IA' and propuesta['respuesta'].strip():
-                return self._respuesta(propuesta['respuesta'].strip(), origen)
-            return None
+            texto = propuesta['respuesta'].strip() or responder_contexto(mensaje, contexto, historial)
+            accesos = [{'etiqueta': 'Abrir Inicio', 'pantalla': 'inicio'}]
+            if usuario['rol'] in ('estudiante', 'profesor'):
+                accesos = [{'etiqueta': 'Abrir Mis clases', 'pantalla': 'mis-clases'},
+                           {'etiqueta': 'Abrir Mi horario', 'pantalla': 'calendario'}]
+            return self._respuesta(texto, origen, accesos=accesos)
         accion = validada['accion']
         if accion == 'ninguna':
             return None

@@ -78,6 +78,47 @@ def _normalizar(texto):
     return re.sub(r'\s+', ' ', texto).strip()
 
 
+def responder_contexto(mensaje, contexto, historial=()):
+    """Respuesta local sobre una proyección autorizada, sin recuperar datos privados."""
+    texto = _normalizar(mensaje)
+    nombre = contexto['nombre']
+    saludo = f'Hola, {nombre}. ' if not historial else ''
+    if any(p in texto for p in ('como me llamo', 'mi nombre', 'quien soy', 'mi rol')):
+        return f"Tu nombre es {nombre} y tu rol es {contexto['rol']}."
+
+    def clase(b):
+        return (f"{b.get('titulo') or b['curso']} · {b['fecha']} · "
+                f"{b['inicio']}–{b['fin']} · {b['aula']}")
+
+    partes = []
+    es_saludo = bool(re.fullmatch(r'(hola(?: grace)?|buenas|buenos dias|buenas tardes)[!. ]*', texto))
+    resumen = es_saludo or any(p in texto for p in ('resumen', 'que tengo', 'que hay', 'mis pendientes'))
+    if contexto['rol'] == 'profesor' and (resumen or any(p in texto for p in ('entrega', 'solicitud', 'revisar'))):
+        partes.append(f"Tienes {contexto.get('entregas_por_revisar', 0)} entregas por revisar y "
+                      f"{contexto.get('solicitudes_pendientes', 0)} solicitudes pendientes en tus cursos.")
+    if contexto['rol'] == 'estudiante' and (resumen or any(p in texto for p in ('actividad', 'tarea', 'entrega', 'pendiente'))):
+        actividades = contexto.get('actividades', [])
+        partes.append('Actividades publicadas:' if actividades else 'No tengo actividades publicadas en el contexto disponible.')
+        for a in actividades[:6]:
+            estado = 'entregada' if a['entregada'] else 'sin entrega registrada'
+            partes.append(f"• {a['titulo']} ({a['curso']}): {a.get('vence') or 'sin fecha de entrega'}; {estado}.")
+        if len(actividades) > 6 or contexto.get('hay_mas_actividades'):
+            partes.append('Hay más actividades; puedes verlas en Mis clases.')
+    if resumen or any(p in texto for p in ('proxima', 'horario', 'clase', 'sesion')):
+        proxima = contexto.get('proxima_sesion')
+        partes.append('Próxima clase: ' + clase(proxima) + '.' if proxima else 'No tengo una próxima sesión publicada ni un bloque próximo registrado.')
+        horario = contexto.get('horario', [])
+        partes.append('Horario de esta semana: ' + '; '.join(clase(b) for b in horario[:4]) + '.'
+                      if horario else 'No tengo horario registrado para esta semana.')
+    if not partes and any(p in texto for p in ('explica', 'pista', 'concepto')):
+        tema = next((t for t in PLANTILLAS if _normalizar(t) in texto), None)
+        if tema:
+            partes.append(PLANTILLAS[tema][0] + ' Empieza por identificar las entradas y comprobar un caso pequeño; no resolveré tu actividad por ti.')
+    if not partes:
+        partes.append('No tengo ese dato en el contexto disponible. Puedes revisar Mis clases o Mi horario con los accesos rápidos.')
+    return (saludo + '\n'.join(partes))[:1500]
+
+
 def detectar_intencion(mensaje):
     """Clasifica por puntuación de expresiones y palabras, sin un modelo de IA."""
     texto = _normalizar(mensaje)
