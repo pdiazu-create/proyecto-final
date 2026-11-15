@@ -1041,5 +1041,42 @@ body.grace-oscura {
 }
 .grace-oscura :is(.content,.sidebar) :is(summary,button,a,input,textarea,select):focus-visible {outline-color:var(--focus)}
 .grace-oscura :is(.aula-diapo li,.aula-diagrama li,[data-aula-agenda] h3) {background:#192f46;color:var(--ink)}
+
+/* Horas laborales: cifras verificadas, con color y etiquetas equivalentes. */
+#seguimiento-horas.horas-panel {background:linear-gradient(115deg,#e1f3fc,#f7fbff);border-top:4px solid #087d80}
+.horas-cabecera {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.horas-cabecera h2 {margin:6px 0 12px}
+.horas-resumen {display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:28px;align-items:center}
+.horas-grafico {margin:0;text-align:center;color:var(--ink)}
+.horas-grafico svg {display:block;width:100%;max-width:220px;margin:auto}
+.horas-grafico figcaption {font-size:14px;font-weight:700}
+.horas-anillo {fill:none;stroke-width:18}
+.horas-restantes {stroke:#c7dce9}
+.horas-acreditadas {stroke:#087d80;transform:rotate(-90deg);transform-origin:80px 80px}
+.horas-porcentaje {font-size:32px;font-weight:800;fill:var(--ink)}
+.horas-grafico-leyenda {font-size:12px;fill:var(--muted)}
+.horas-detalle {min-width:0}
+.horas-detalle h3 {font-size:20px;margin:0 0 8px}
+.horas-cifras {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
+.horas-cifras>div {padding:14px;border:1px solid var(--line);border-radius:12px;min-width:0}
+.horas-cifras dt {font-size:14px;font-weight:700}
+.horas-cifras dd {font-size:21px;font-weight:800;margin:8px 0 0;overflow-wrap:break-word}
+.horas-cifra-aprobada {background:#d7f1eb;color:#135741}
+.horas-cifra-restante {background:#dcecf9;color:#204d72}
+.horas-cifra-revision {background:#fff0d3;color:#754a06}
+.horas-nota {font-size:14px;line-height:1.6;color:var(--muted)}
+.horas-accesos {display:flex;flex-wrap:wrap;gap:10px}
+.horas-accesos a {display:inline-flex;align-items:center;text-align:center;text-decoration:none;font-size:14px}
+.grace-oscura #seguimiento-horas.horas-panel {background:linear-gradient(115deg,#173a4c,#182e43);border-top-color:#8adbd3}
+.grace-oscura .horas-acreditadas {stroke:#8adbd3}
+.grace-oscura .horas-restantes {stroke:#49657d}
+.grace-oscura .horas-cifra-aprobada {background:#173d36;color:#b7f1db}
+.grace-oscura .horas-cifra-restante {background:#213e56;color:#d2e9fd}
+.grace-oscura .horas-cifra-revision {background:#473a22;color:#ffe1a0}
+@media(max-width:640px) {
+  .horas-resumen {grid-template-columns:minmax(0,1fr);gap:18px}
+  .horas-grafico {max-width:190px;justify-self:center;width:100%}
+  .horas-accesos a {justify-content:center;flex:1 1 180px}
+}
 .grace-oscura [data-aula-agenda] .aula-paso[aria-current="step"] {background:#204644;color:#c8f6ec}
 

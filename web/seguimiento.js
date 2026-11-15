@@ -115,14 +115,42 @@ function formularioEvento() {
     <button class="primary-btn">Publicar evento</button></form></details>`;
 }
 
+function renderizarHoras(datos) {
+  const minutos = datos.minutos;
+  const meta = datos.meta_minutos;
+  if (!Number.isFinite(minutos) || minutos < 0 || !Number.isFinite(meta) || meta <= 0) {
+    return '<article id="seguimiento-horas" class="panel"><h2>Mis horas laborales</h2><p>No se pudo leer el progreso de horas. Vuelve a cargar Seguimiento.</p></article>';
+  }
+  const restantes = Math.max(0, meta - minutos);
+  const porcentaje = Math.min(100, minutos / meta * 100);
+  const revision = datos.solicitudes.filter(s => s.tipo === 'horas' && s.estado === 'pendiente').length;
+  const resumen = `${horasSeguimiento(minutos)} acreditadas de ${horasSeguimiento(meta)}. Faltan ${horasSeguimiento(restantes)}.`;
+  return `<article id="seguimiento-horas" tabindex="-1" class="panel horas-panel">
+    <div class="horas-cabecera"><div><span class="eyebrow">TU PARTICIPACIÓN CUENTA</span><h2>Mis horas laborales</h2></div>
+      <span class="tag ${restantes ? 'estado-pendiente' : 'estado-confirmado'}">${restantes ? '◷ En progreso' : '✓ Meta completada'}</span></div>
+    <div class="horas-resumen"><figure class="horas-grafico">
+      <svg viewBox="0 0 160 160" role="img" aria-label="${escapar(resumen)}">
+        <circle class="horas-anillo horas-restantes" cx="80" cy="80" r="60" />
+        <circle class="horas-anillo horas-acreditadas" cx="80" cy="80" r="60" pathLength="100" stroke-dasharray="${porcentaje.toFixed(3)} 100" />
+        <text class="horas-porcentaje" x="80" y="79" text-anchor="middle">${Math.floor(porcentaje)}%</text>
+        <text class="horas-grafico-leyenda" x="80" y="99" text-anchor="middle">de la meta</text>
+      </svg><figcaption>Meta: ${horasSeguimiento(meta)}</figcaption></figure>
+      <div class="horas-detalle"><h3>${restantes ? (minutos ? 'Cada participación suma' : 'Tu recorrido empieza aquí') : '¡Completaste tu meta de horas!'}</h3>
+        <p>${restantes ? `Te faltan <strong>${horasSeguimiento(restantes)}</strong> para completar tu meta.` : 'Tus horas aprobadas ya cubren la meta. Puedes seguir participando.'}</p>
+        <dl class="horas-cifras"><div class="horas-cifra-aprobada"><dt>✓ Acreditadas</dt><dd>${horasSeguimiento(minutos)}</dd></div>
+          <div class="horas-cifra-restante"><dt>◷ Por completar</dt><dd>${horasSeguimiento(restantes)}</dd></div>
+          <div class="horas-cifra-revision"><dt>▤ En revisión</dt><dd>${revision} ${revision === 1 ? 'solicitud' : 'solicitudes'}</dd></div></dl>
+        <p class="horas-nota">Solo cuentan las evidencias aprobadas por coordinación. Las solicitudes en revisión aún no suman horas.</p>
+        <div class="horas-accesos"><a class="primary-btn" href="#seguimiento-eventos">Ver eventos →</a>
+          <a class="outline-btn" href="#seguimiento-solicitudes">Ver mis solicitudes</a></div>
+      </div></div></article>`;
+}
+
 function renderizarSeguimiento(datos) {
   const coordinacion = rolActual === 'coordinador';
   const estudiante = rolActual === 'estudiante';
   const hoy = fechaLocal(new Date());
-  return `${estudiante ? `<article id="seguimiento-horas" tabindex="-1" class="panel"><h2>Mis horas laborales</h2>
-    <p><strong>${horasSeguimiento(datos.minutos)} de 25 h acreditadas</strong></p>
-    <progress aria-label="Horas acreditadas" max="${datos.meta_minutos}" value="${datos.minutos}"></progress>
-    <p>Solo se suman evidencias aprobadas por coordinación.</p></article>
+  return `${estudiante ? `${renderizarHoras(datos)}
     <article id="seguimiento-asistencia" tabindex="-1" class="panel"><h2>Mi asistencia por sesión</h2>${datos.asistencias.map(a => `<p>
       ${escapar(a.curso)} · ${escapar(a.sesion)} · ${escapar(formatFecha(a.fecha))} · ${escapar(ESTADOS_SESION[a.estado])}</p>`).join('')
       || '<p>Todavía no hay registros por sesión.</p>'}</article>` : ''}
